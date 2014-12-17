@@ -20,6 +20,10 @@
 #define INVERT_COLOR_LINE_3 0
 #define INVERT_COLOR_LINE_4 0
 
+#define CONFIG_BACKGROUND 0
+#define CONFIG_LIMIT_MAX 1
+
+
 enum e_layer_names {
 	MINUTES = 0, TENS, HOURS, DATE
 };
@@ -28,8 +32,8 @@ typedef enum e_direction {
 	OUT = 0, IN
 } eDirection;
 
-void slide_out_animation_stopped(Animation *slide_out_animation, bool finished, void *context);
-void slide_in_animation_stopped(Animation *slide_out_animation, bool finished, void *context);
+void handle_slide_out_animation_stopped(Animation *slide_out_animation, bool finished, void *context);
+void handle_slide_in_animation_stopped(Animation *slide_out_animation, bool finished, void *context);
 
 typedef struct CommonWordsData {
 	TextLayer *label;
@@ -39,8 +43,19 @@ typedef struct CommonWordsData {
 } CommonWordsData;
 
 static Window *s_main_window;
-static CommonWordsData* s_layers[4];
+static CommonWordsData *s_layers[4];
+static InverterLayer *inverter_layer;
 static struct tm *new_time;
+
+void update_configuration(void)
+{
+    bool inv = 0;    /* default to not inverted */
+    if (persist_exists(CONFIG_BACKGROUND))
+    {
+        inv = persist_read_bool(CONFIG_BACKGROUND);
+    }
+    layer_set_hidden(inverter_layer_get_layer(inverter_layer), !inv);
+}
 
 void animate(CommonWordsData *layer, eDirection direction, GRect *from_frame,
 		GRect *to_frame) {
@@ -50,12 +65,32 @@ void animate(CommonWordsData *layer, eDirection direction, GRect *from_frame,
 			TIME_SLOT_ANIMATION_DURATION);
 	if(direction == OUT){
 		animation_set_curve((Animation*) layer->prop_animation, AnimationCurveEaseIn);
-		animation_set_handlers((Animation*) layer->prop_animation,(AnimationHandlers ) { .stopped = slide_out_animation_stopped },(void *) layer);
+		animation_set_handlers((Animation*) layer->prop_animation,(AnimationHandlers ) { .stopped = handle_slide_out_animation_stopped },(void *) layer);
 	}else{
 		animation_set_curve((Animation*) layer->prop_animation, AnimationCurveEaseOut);
-		animation_set_handlers((Animation*) layer->prop_animation,(AnimationHandlers ) { .stopped = slide_in_animation_stopped },(void *) layer);
+		animation_set_handlers((Animation*) layer->prop_animation,(AnimationHandlers ) { .stopped = handle_slide_in_animation_stopped },(void *) layer);
 	}
 	animation_schedule((Animation*) layer->prop_animation);
+}
+
+void init_layer(Layer *window_layer, CommonWordsData *layer, GRect rect,
+		GFont font) {
+	layer->label = text_layer_create(rect);
+	text_layer_set_background_color(layer->label, GColorClear);
+	text_layer_set_text_color(layer->label, GColorWhite);
+	text_layer_set_font(layer->label, font);
+	layer_add_child(window_layer, text_layer_get_layer(layer->label));
+}
+
+void update_layer(CommonWordsData *layer, struct tm *t) {
+	GRect from_frame = layer_get_frame(text_layer_get_layer(layer->label));
+	GRect frame = layer_get_frame(window_get_root_layer(s_main_window));
+
+	GRect to_frame = GRect(-frame.size.w, from_frame.origin.y, frame.size.w,
+			from_frame.size.h);
+
+	// Schedule the out animation
+		animate(layer, OUT, NULL, &to_frame);
 }
 
 void slide_in(CommonWordsData *layer) {
@@ -76,7 +111,41 @@ void slide_in(CommonWordsData *layer) {
 	animate(layer, IN, &from_frame, &to_frame);
 }
 
-void slide_out_animation_stopped(Animation *slide_out_animation, bool finished,
+void handle_inbox_received(DictionaryIterator *received, void *context)
+{
+    Tuple *background_tuple = dict_find(received, CONFIG_BACKGROUND);
+
+    if (background_tuple)
+    {
+        app_log(APP_LOG_LEVEL_DEBUG,
+                __FILE__,
+                __LINE__,
+                "bg=%s",
+                background_tuple->value->cstring);
+
+        if (strcmp(background_tuple->value->cstring, "0") == 0)
+        {
+            persist_write_bool(CONFIG_BACKGROUND, false);
+        }
+        else
+        {
+            persist_write_bool(CONFIG_BACKGROUND, true);
+        }
+    }
+
+    update_configuration();
+}
+
+void handle_inbox_dropped(AppMessageResult reason, void *ctx)
+{
+    app_log(APP_LOG_LEVEL_WARNING,
+            __FILE__,
+            __LINE__,
+            "Message dropped, reason code %d",
+            reason);
+}
+
+void handle_slide_out_animation_stopped(Animation *slide_out_animation, bool finished,
 		void *context) {
 	CommonWordsData *layer = (CommonWordsData *) context;
 	property_animation_destroy(layer->prop_animation);
@@ -86,21 +155,10 @@ void slide_out_animation_stopped(Animation *slide_out_animation, bool finished,
 	}
 }
 
-void slide_in_animation_stopped(Animation *slide_out_animation, bool finished,
+void handle_slide_in_animation_stopped(Animation *slide_out_animation, bool finished,
 		void *context) {
 	CommonWordsData *layer = (CommonWordsData *) context;
 	property_animation_destroy(layer->prop_animation);
-}
-
-void update_layer(CommonWordsData *layer, struct tm *t) {
-	GRect from_frame = layer_get_frame(text_layer_get_layer(layer->label));
-	GRect frame = layer_get_frame(window_get_root_layer(s_main_window));
-
-	GRect to_frame = GRect(-frame.size.w, from_frame.origin.y, frame.size.w,
-			from_frame.size.h);
-
-	// Schedule the out animation
-		animate(layer, OUT, NULL, &to_frame);
 }
 
 static void handle_minute_tick(struct tm *t, TimeUnits units_changed) {
@@ -136,16 +194,7 @@ static void handle_minute_tick(struct tm *t, TimeUnits units_changed) {
 	}
 }
 
-void init_layer(Layer *window_layer, CommonWordsData *layer, GRect rect,
-		GFont font) {
-	layer->label = text_layer_create(rect);
-	text_layer_set_background_color(layer->label, GColorClear);
-	text_layer_set_text_color(layer->label, GColorWhite);
-	text_layer_set_font(layer->label, font);
-	layer_add_child(window_layer, text_layer_get_layer(layer->label));
-}
-
-static void main_window_load(Window *window) {
+static void handle_main_window_load(Window *window) {
 
 	window_set_background_color(window, GColorBlack);
 	Layer *window_layer = window_get_root_layer(window);
@@ -181,6 +230,10 @@ static void main_window_load(Window *window) {
 	init_layer(window_layer, s_layers[DATE], GRect(0, 114, bounds.size.w, 50),
 			fonts_get_system_font(FONT_LINE_4));
 
+	inverter_layer = inverter_layer_create(GRect(0, 0, 144, 168));
+	layer_add_child(window_layer, inverter_layer_get_layer(inverter_layer));
+	update_configuration();
+
 	//show your face
 	time_t now = time(NULL);
 	new_time = localtime(&now);
@@ -192,21 +245,31 @@ static void main_window_load(Window *window) {
 	}
 }
 
-static void main_window_unload(Window *window) {
+static void handle_main_window_unload(Window *window) {
 	for (int i = 0; i < NUM_LAYERS; ++i) {
 		text_layer_destroy(s_layers[i]->label);
 		free(s_layers[i]);
 		s_layers[i] = NULL;
 	}
+	inverter_layer_destroy(inverter_layer);
 }
 
 static void init() {
+
+	//Register handler for config message from js
+	app_message_register_inbox_received(&handle_inbox_received);
+	app_message_register_inbox_dropped(&handle_inbox_dropped);
+
+	uint32_t size = dict_calc_buffer_size(CONFIG_LIMIT_MAX);
+	if(app_message_open(size, size) != APP_MSG_OK)
+		APP_LOG(APP_LOG_LEVEL_ERROR, "App message open failed");
+
 	// Create main window element  and assign to pointer
 	s_main_window = window_create();
 
 	// Set handlers to manage the elements inside the Window
 	window_set_window_handlers(s_main_window, (WindowHandlers ) { .load =
-					main_window_load, .unload = main_window_unload });
+			handle_main_window_load, .unload = handle_main_window_unload });
 
 	// Register with TickTimerService
 	tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
@@ -216,7 +279,9 @@ static void init() {
 }
 
 static void deinit() {
+	//cancel any animations
 	animation_unschedule_all();
+	app_message_deregister_callbacks();
 	// Destroy the window
 	window_destroy(s_main_window);
 }
