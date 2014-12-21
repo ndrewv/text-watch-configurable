@@ -33,13 +33,13 @@
       </div>
     </div>
     <script>
-      function saveOptions() {
-        var options = {}
+      function saveConfig() {
+        var config = {}
         //Add all textual values
-        $('textarea, select, [type="hidden"], [type="password"], [type="text"]').each(function(){options[$(this).attr('id')] = $(this).val();})
+        $('textarea, select, [type="hidden"], [type="password"], [type="text"]').each(function(){config[$(this).attr('id')] = $(this).val();})
         //Add all checkbox type values
-        $('[type="radio"], [type="checkbox"]').each(function(){options[$(this).attr('id')] = $(this).is(':checked');})
-        return options;
+        $('[type="radio"], [type="checkbox"]').each(function(){config[$(this).attr('id')] = $(this).is(':checked');})
+        return config;
       }
 
       $().ready(function() {
@@ -51,7 +51,7 @@
         $("#b-submit").click(function() {
           console.log("Submit");
 
-          var location = "pebblejs://close#" + encodeURIComponent(JSON.stringify(saveOptions()));
+          var location = "pebblejs://close#" + encodeURIComponent(JSON.stringify(saveConfig()));
           console.log("Warping to: " + location);
           console.log(location);
           document.location = location;
