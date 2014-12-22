@@ -4,9 +4,6 @@
     <title>Configurable</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.css" />
-    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-    <script src="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>
   </head>
   <body>
     <div data-role="page" id="main">
@@ -33,37 +30,22 @@
       </div>
     </div>
     <script>
-      function saveConfig() {
-        var config = {}
-        //Add all textual values
-        $('textarea, select, [type="hidden"], [type="password"], [type="text"]').each(function(){config[$(this).attr('id')] = $(this).val();})
-        //Add all checkbox type values
-        $('[type="radio"], [type="checkbox"]').each(function(){config[$(this).attr('id')] = $(this).is(':checked');})
-        return config;
-      }
-
-      $().ready(function() {
-        $("#b-cancel").click(function() {
-          console.log("Cancel");
-          document.location = "pebblejs://close";
-        });
-
-        $("#b-submit").click(function() {
-          console.log("Submit");
-
-          var location = "pebblejs://close#" + encodeURIComponent(JSON.stringify(saveConfig()));
-          console.log("Warping to: " + location);
-          console.log(location);
-          document.location = location;
-        });
-
-        //Set form values to whatever is passed in.
-        var obj = jQuery.parseJSON(decodeURIComponent(window.location.search.substring(1)));
-        for(key in obj) {
-          $("#"+[key]).val(obj[key]);
-          $("#"+[key]).val(obj[key]).slider("refresh");       
+      var config = JSON.parse(decodeURIComponent(window.location.search.substring(1)));
+        for (var which in config) {
+            if (form[which]) for (var i = 0; i < form[which].length; i++) {
+                var radio = form[which][i];
+                radio.checked = radio.value == config[which];
+            }
         }
-      });
+        function onSubmit(e) {
+            var result = {};
+            var inputs = form.getElementsByTagName("input");
+            for (var i = 0; i < inputs.length; i++)
+                if (inputs[i].checked)
+                    result[inputs[i].name] = parseInt(inputs[i].value);
+            window.location.href = "pebblejs://close#" + encodeURIComponent(JSON.stringify(result));
+            return false;
+        }
     </script>
   </body>
 </html>
