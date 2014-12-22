@@ -38,7 +38,7 @@
         //Add all textual values
         $('textarea, select, [type="hidden"], [type="password"], [type="text"]').each(function(){config[$(this).attr('id')] = $(this).val();})
         //Add all checkbox type values
-        $('[type="radio"], [type="checkbox"]').each(function(){config[$(this).attr('id')] = $(this).is(':checked');})
+        $('[type="radio"], [type="checkbox"]').each(function(){config[$(this).attr('id')] = parseInt($(this).is(':checked').val(),10));})
         return config;
       }
       $().ready(function() {
