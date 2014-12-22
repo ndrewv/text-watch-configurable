@@ -13,43 +13,53 @@
       <div data-role="header" class="jqm-header">
         <h1>TextTime Configuration</h1>
       </div>
-      <form>
-        <div data-role="content">
-          <div data-role="fieldcontain">
-            <label for="background">Background:</label>
-            <select name="background" id="background" data-role="slider">
-              <option value="0">Black</option>
-              <option value="1">White</option>
-            </select>
-          </div>
-  
-          <div class="ui-body ui-body-b">
-            <fieldset class="ui-grid-a">
-                <div class="ui-block-a"><button type="submit" data-theme="d" id="b-cancel">Cancel</button></div>
-                <div class="ui-block-b"><button type="submit" data-theme="a" id="b-submit">Submit</button></div>
-              </fieldset>
-            </div>
+
+      <div data-role="content">
+        <div data-role="fieldcontain">
+          <label for="background">Background:</label>
+          <select name="background" id="background" data-role="slider">
+            <option value="0">Black</option>
+            <option value="1">White</option>
+          </select>
+        </div>
+
+        <div class="ui-body ui-body-b">
+          <fieldset class="ui-grid-a">
+              <div class="ui-block-a"><button type="submit" data-theme="d" id="b-cancel">Cancel</button></div>
+              <div class="ui-block-b"><button type="submit" data-theme="a" id="b-submit">Submit</button></div>
+            </fieldset>
           </div>
         </div>
-      </form>
+      </div>
     </div>
     <script>
-      var config = JSON.parse(decodeURIComponent(window.location.search.substring(1)));
-        for (var which in config) {
-            if (form[which]) for (var i = 0; i < form[which].length; i++) {
-                var radio = form[which][i];
-                radio.checked = radio.value == config[which];
-            }
+      function saveConfig() {
+        var config = {}
+        //Add all textual values
+        $('textarea, select, [type="hidden"], [type="password"], [type="text"]').each(function(){config[$(this).attr('id')] = $(this).val();})
+        //Add all checkbox type values
+        $('[type="radio"], [type="checkbox"]').each(function(){config[$(this).attr('id')] = $(this).is(':checked');})
+        return config;
+      }
+      $().ready(function() {
+        $("#b-cancel").click(function() {
+          console.log("Cancel");
+          document.location = "pebblejs://close";
+        });
+        $("#b-submit").click(function() {
+          console.log("Submit");
+          var location = "pebblejs://close#" + encodeURIComponent(JSON.stringify(saveConfig()));
+          console.log("Warping to: " + location);
+          console.log(location);
+          document.location = location;
+        });
+        //Set form values to whatever is passed in.
+        var obj = jQuery.parseJSON(decodeURIComponent(window.location.search.substring(1)));
+        for(key in obj) {
+          $("#"+[key]).val(obj[key]);
+          $("#"+[key]).val(obj[key]).slider("refresh");       
         }
-        function onSubmit(e) {
-            var result = {};
-            var inputs = form.getElementsByTagName("input");
-            for (var i = 0; i < inputs.length; i++)
-                if (inputs[i].checked)
-                    result[inputs[i].name] = parseInt(inputs[i].value);
-            window.location.href = "pebblejs://close#" + encodeURIComponent(JSON.stringify(result));
-            return false;
-        }
+      });
     </script>
   </body>
 </html>
