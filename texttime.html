@@ -13,24 +13,25 @@
       <div data-role="header" class="jqm-header">
         <h1>TextTime Configuration</h1>
       </div>
-
-      <div data-role="content">
-        <div data-role="fieldcontain">
-          <label for="background">Background:</label>
-          <select name="background" id="background" data-role="slider">
-            <option value="0">Black</option>
-            <option value="1">White</option>
-          </select>
-        </div>
-
-        <div class="ui-body ui-body-b">
-          <fieldset class="ui-grid-a">
-              <div class="ui-block-a"><button type="submit" data-theme="d" id="b-cancel">Cancel</button></div>
-              <div class="ui-block-b"><button type="submit" data-theme="a" id="b-submit">Submit</button></div>
-            </fieldset>
+      <form>
+        <div data-role="content">
+          <div data-role="fieldcontain">
+            <label for="background">Background:</label>
+            <select name="background" id="background" data-role="slider">
+              <option value="0">Black</option>
+              <option value="1">White</option>
+            </select>
+          </div>
+  
+          <div class="ui-body ui-body-b">
+            <fieldset class="ui-grid-a">
+                <div class="ui-block-a"><button type="submit" data-theme="d" id="b-cancel">Cancel</button></div>
+                <div class="ui-block-b"><button type="submit" data-theme="a" id="b-submit">Submit</button></div>
+              </fieldset>
+            </div>
           </div>
         </div>
-      </div>
+      </form>
     </div>
     <script>
       var config = JSON.parse(decodeURIComponent(window.location.search.substring(1)));
