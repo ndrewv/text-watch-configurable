@@ -38,21 +38,12 @@
 				</div>
 			</div>
 		</form>
-		<script>		
-			var params = window.location.search.substr(1).split('&');
-			for (var i=0;i<params.length;i++) {
-				var p=params[i].split('=');
-				var element=document.getElementById(p[0]);
-				if (element!==null) {
-					element.setSelectedIndex(p[1]);
-				}
-			}
-		
+		<script>				
 			function submitForm(){
 				var variables = "";
 				var selects=this.form.getElementsByTagName('select');
 				for(var i=0;i<selects.length;i++){
-					variables=variables+selects[i].id.toString()+'='+selects[i].selectedIndex+"&";
+					variables=variables+selects[i].id.toString()+'='+selects[i].value+"&";
 				}
 				variables=variables.substring(0,variables.length-1);
 	            var location = "pebblejs://close#"+encodeURIComponent(variables);
@@ -62,6 +53,15 @@
 			function cancelForm(){
 				console.log("Cancel");
           		document.location = "pebblejs://close";
+			}
+			
+			var params = window.location.search.substr(1).split('&');
+			for (var i=0;i<params.length;i++) {
+				var p=params[i].split('=');
+				var element=document.getElementById(p[0]);
+				if (element!==null) {
+					element.value=parseInt(p[1]);
+				}
 			}
 		</script>
 	</body>
