@@ -1,18 +1,21 @@
 {
-  "uuid": "9c0f8228-066d-4691-b468-23d93287f5b4",
-  "shortName": "Texttime",
-  "longName": "Texttime",
-  "companyName": "NdrewV",
-  "versionCode": 1,
-  "versionLabel": "1.0",
-  "capabilities": [ "configurable" ],
-  "watchapp": {
-    "watchface": true
-  },
-  "appKeys": {
-    "background": 0
-  },
-  "resources": {
-    "media": []
-  }
+    "appKeys": {
+        "background": 0
+    },
+    "capabilities": [
+        "configurable"
+    ],
+    "companyName": "NdrewV",
+    "longName": "Texttime",
+    "projectType": "native",
+    "resources": {
+        "media": []
+    },
+    "shortName": "Texttime",
+    "uuid": "9c0f8228-066d-4691-b468-23d93287f5b4",
+    "versionCode": 1,
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": true
+    }
 }
