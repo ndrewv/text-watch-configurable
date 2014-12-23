@@ -1,6 +1,7 @@
 {
     "appKeys": {
-        "background": 0
+        "background": 0,
+        "align": 1
     },
     "capabilities": [
         "configurable"

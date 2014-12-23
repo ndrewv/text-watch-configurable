@@ -20,9 +20,9 @@
 #define INVERT_COLOR_LINE_3 0
 #define INVERT_COLOR_LINE_4 0
 
-#define CONFIG_BACKGROUND 0
-#define CONFIG_LIMIT_MAX 1
-
+//Settings defines
+#define KEY_BACKGROUND 0
+#define KEY_ALIGN 1
 
 enum e_layer_names {
 	MINUTES = 0, TENS, HOURS, DATE
@@ -50,9 +50,9 @@ static struct tm *new_time;
 void update_configuration(void)
 {
     bool inv = 0;    /* default to not inverted */
-    if (persist_exists(CONFIG_BACKGROUND))
+    if (persist_exists(KEY_BACKGROUND))
     {
-        inv = persist_read_bool(CONFIG_BACKGROUND);
+        inv = persist_read_bool(KEY_BACKGROUND);
     }
     layer_set_hidden(inverter_layer_get_layer(inverter_layer), !inv);
 }
@@ -111,29 +111,27 @@ void slide_in(CommonWordsData *layer) {
 	animate(layer, IN, &from_frame, &to_frame);
 }
 
-void handle_inbox_received(DictionaryIterator *received, void *context)
+void handle_inbox_received(DictionaryIterator *iterator, void *context)
 {
-    Tuple *background_tuple = dict_find(received, CONFIG_BACKGROUND);
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Message received");
+    // Read first item
+	Tuple *t = dict_read_first(iterator);
 
-    if (background_tuple)
-    {
-        app_log(APP_LOG_LEVEL_DEBUG,
-                __FILE__,
-                __LINE__,
-                "bg=%s",
-                background_tuple->value->cstring);
-
-        if (strcmp(background_tuple->value->cstring, "0") == 0)
-        {
-            persist_write_bool(CONFIG_BACKGROUND, false);
-        }
-        else
-        {
-            persist_write_bool(CONFIG_BACKGROUND, true);
-        }
-    }
-
-    update_configuration();
+	// For all items
+	while (t != NULL) {
+		switch (t->key) {
+		case KEY_BACKGROUND:
+			APP_LOG(APP_LOG_LEVEL_DEBUG, "BACKGROUND received");
+			break;
+		default:
+			APP_LOG(APP_LOG_LEVEL_ERROR, "Key %d not recognized!",
+					(int )t->key);
+			break;
+		}
+		// Look for next item
+		t = dict_read_next(iterator);
+	}
+	update_configuration();
 }
 
 void handle_inbox_dropped(AppMessageResult reason, void *ctx)
@@ -260,8 +258,9 @@ static void init() {
 	app_message_register_inbox_received(&handle_inbox_received);
 	app_message_register_inbox_dropped(&handle_inbox_dropped);
 
-	uint32_t size = dict_calc_buffer_size(CONFIG_LIMIT_MAX);
-	if(app_message_open(size, size) != APP_MSG_OK)
+  //dict_calc_buffer_size
+	if(app_message_open(app_message_inbox_size_maximum(),
+			app_message_inbox_size_maximum()) != APP_MSG_OK)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "App message open failed");
 
 	// Create main window element  and assign to pointer
