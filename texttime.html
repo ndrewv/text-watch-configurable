@@ -38,7 +38,16 @@
 				</div>
 			</div>
 		</form>
-		<script>
+		<script>		
+			var params = window.location.search.substr(1).split('&');
+			for (var i=0;i<params.length;i++) {
+				var p=params[i].split('=');
+				var element=document.getElementById(p[0]);
+				if (element!==null) {
+					element.setSelectedIndex(p[1]);
+				}
+			}
+		
 			function submitForm(){
 				var variables = "";
 				var selects=this.form.getElementsByTagName('select');
