@@ -41,13 +41,13 @@
 		<div id="textDiv"></div>
 		<script>				
 			function submitForm(){
-				var variables = "";
+				var variables = {};
 				var selects=this.form.getElementsByTagName('select');
 				for(var i=0;i<selects.length;i++){
-					variables=variables+selects[i].id.toString()+'='+selects[i].value+"&";
+					variables[selects[i].id.toString()]=selects[i].value;
 				}
-				variables=variables.substring(0,variables.length-1);
-	            var location = "pebblejs://close#"+encodeURIComponent(variables);
+				console.log(JSON.stringify(variables));
+	            var location = "pebblejs://close#"+encodeURIComponent(JSON.stringify(variables));
 	            console.log(location);
 	            document.location = location;
 			}
