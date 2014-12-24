@@ -57,18 +57,17 @@
           		document.location = "pebblejs://close";
 			}
 			
-			console.log(window.location.search.substr(1));
-			
-			/*
-			var params = window.location.search.substr(1).split('&');
-			for (var i=0;i<params.length;i++) {
-				var p=params[i].split('=');
-				var element=document.getElementById(p[0]);
-				if (element!==null) {
-					element.value=parseInt(p[1]);
+			var config = (window.location.search.substr(1);
+			console.log(config);
+			var obj = JSON.parse(config);
+			for (var key in obj){
+  				if(obj.hasOwnProperty(key)){
+					var element=document.getElementById(key);
+					if (element!==null) {
+						element.value=parseInt(obj[key]);
+					}
 				}
 			}
-			*/
 		</script>
 	</body>
 </html>
