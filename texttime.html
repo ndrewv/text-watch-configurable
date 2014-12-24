@@ -38,6 +38,7 @@
 				</div>
 			</div>
 		</form>
+		<div id="textDiv"></div>
 		<script>				
 			function submitForm(){
 				var variables = "";
@@ -55,6 +56,9 @@
           		document.location = "pebblejs://close";
 			}
 			
+			document.getElementById("textDiv").innerHTML = window.location.search.substr(1);
+			
+			/*
 			var params = window.location.search.substr(1).split('&');
 			for (var i=0;i<params.length;i++) {
 				var p=params[i].split('=');
@@ -63,6 +67,7 @@
 					element.value=parseInt(p[1]);
 				}
 			}
+			*/
 		</script>
 	</body>
 </html>
