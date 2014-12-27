@@ -3,26 +3,23 @@
 #define DEBUG 1
 #define NUM_LAYERS 4
 #define TIME_SLOT_ANIMATION_DURATION 700
+
 #define FONT_LINE_1 FONT_KEY_BITHAM_42_BOLD
 #define FONT_LINE_2 FONT_KEY_BITHAM_42_LIGHT
 #define FONT_LINE_3 FONT_KEY_BITHAM_42_LIGHT
 #define FONT_LINE_4 FONT_KEY_BITHAM_42_LIGHT
-#define OFFSET_LINE_1 0
-#define OFFSET_LINE_2 0
-#define OFFSET_LINE_3 0
-#define OFFSET_LINE_4 0
-#define ALIGN_LINE_1 GTextAlignmentLeft
-#define ALIGN_LINE_2 GTextAlignmentLeft
-#define ALIGN_LINE_3 GTextAlignmentLeft
-#define ALIGN_LINE_4 GTextAlignmentLeft
-#define INVERT_COLOR_LINE_1 0
-#define INVERT_COLOR_LINE_2 0
-#define INVERT_COLOR_LINE_3 0
-#define INVERT_COLOR_LINE_4 0
-
-//Settings defines
+#define FLASH_OPTIONS 0  
+  
 #define KEY_BACKGROUND 0
 #define KEY_ALIGN 1
+#define KEY_LIMIT 2
+
+void handle_slide_out_animation_stopped(Animation *slide_out_animation, bool finished, void *context);
+void handle_slide_in_animation_stopped(Animation *slide_out_animation, bool finished, void *context);
+
+enum e_align {
+  ALIGN_LEFT = 0, ALIGN_CENTRE, ALIGN_RIGHT
+};
 
 enum e_layer_names {
 	MINUTES = 0, TENS, HOURS, DATE
@@ -31,9 +28,6 @@ enum e_layer_names {
 typedef enum e_direction {
 	OUT = 0, IN
 } eDirection;
-
-void handle_slide_out_animation_stopped(Animation *slide_out_animation, bool finished, void *context);
-void handle_slide_in_animation_stopped(Animation *slide_out_animation, bool finished, void *context);
 
 typedef struct CommonWordsData {
 	TextLayer *label;
@@ -46,15 +40,30 @@ static Window *s_main_window;
 static CommonWordsData *s_layers[4];
 static InverterLayer *inverter_layer;
 static struct tm *new_time;
+static int options [KEY_LIMIT];
 
 void update_configuration(void)
 {
-    bool inv = 0;    /* default to not inverted */
-    if (persist_exists(KEY_BACKGROUND))
-    {
-        inv = persist_read_bool(KEY_BACKGROUND);
-    }
-    layer_set_hidden(inverter_layer_get_layer(inverter_layer), !inv);
+  if(options[KEY_BACKGROUND] == 0){
+    layer_set_hidden(inverter_layer_get_layer(inverter_layer), true);
+  }else{
+    layer_set_hidden(inverter_layer_get_layer(inverter_layer), false);
+  }
+  GTextAlignment align = GTextAlignmentLeft;
+  switch(options[KEY_ALIGN]){
+    case ALIGN_CENTRE:
+    align = GTextAlignmentCenter;
+    break;
+    case ALIGN_RIGHT:
+    align = GTextAlignmentRight;
+    break;
+    case ALIGN_LEFT:
+    default:
+    break;
+  }
+  for(int j = 0; j < NUM_LAYERS; j++){
+    text_layer_set_text_alignment((TextLayer*)text_layer_get_layer(s_layers[j]->label), align);
+  }
 }
 
 void animate(CommonWordsData *layer, eDirection direction, GRect *from_frame,
@@ -113,25 +122,21 @@ void slide_in(CommonWordsData *layer) {
 
 void handle_inbox_received(DictionaryIterator *iterator, void *context)
 {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Message received");
-    // Read first item
-	Tuple *t = dict_read_first(iterator);
-
-	// For all items
-	while (t != NULL) {
-		switch (t->key) {
-		case KEY_BACKGROUND:
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "BACKGROUND received");
-			break;
-		default:
-			APP_LOG(APP_LOG_LEVEL_ERROR, "Key %d not recognized!",
-					(int )t->key);
-			break;
-		}
-		// Look for next item
-		t = dict_read_next(iterator);
-	}
-	update_configuration();
+  // Read first item
+  Tuple *t = dict_read_first(iterator); 
+  // For all items
+  while(t != NULL) {
+    if(t->key < KEY_LIMIT){
+#ifdef DEBUG      
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "key received: %u - %d", (unsigned int)t->key, (int)t->value->int32);
+#endif
+      options[t->key] = t->value->int32;
+    }
+    // Look for next item
+    t = dict_read_next(iterator);
+  }
+  persist_write_data(FLASH_OPTIONS, &options, sizeof(options));
+  update_configuration();
 }
 
 void handle_inbox_dropped(AppMessageResult reason, void *ctx)
@@ -200,6 +205,15 @@ static void handle_main_window_load(Window *window) {
 	for (int i = 0; i < NUM_LAYERS; ++i) {
 		s_layers[i] = malloc(sizeof(CommonWordsData));
 	}
+  
+  //initialise options
+  memset(&options, 0, sizeof(options));
+  if(persist_exists(FLASH_OPTIONS)){
+     persist_read_data(FLASH_OPTIONS, &options, sizeof(options));
+#ifdef DEBUG
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Read options %d - %d, %d - %d", KEY_BACKGROUND, options[KEY_BACKGROUND], KEY_ALIGN, options[KEY_ALIGN]);
+#endif
+  }
 
 	// Update time callbacks
 	s_layers[MINUTES]->update = &fuzzy_sminutes_to_words;
@@ -258,7 +272,6 @@ static void init() {
 	app_message_register_inbox_received(&handle_inbox_received);
 	app_message_register_inbox_dropped(&handle_inbox_dropped);
 
-  //dict_calc_buffer_size
 	if(app_message_open(app_message_inbox_size_maximum(),
 			app_message_inbox_size_maximum()) != APP_MSG_OK)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "App message open failed");
