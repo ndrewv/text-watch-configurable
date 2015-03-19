@@ -15,6 +15,10 @@
 				</div>
 				<div data-role="content">
 					<div data-role="fieldcontain">
+						<label for="debug">Debug</label>
+						<textarea cols="40" rows="8" name="debug" id="debug"></textarea>
+					</div>
+					<div data-role="fieldcontain">
 						<label for="background">Background:</label>
 						<select name="background" id="background" data-role="slider">
 							<option value="0">Black</option>
@@ -57,6 +61,7 @@
           			document.location = location;
 			}
 			var config = decodeURIComponent(window.location.search.substr(1));
+			$('debug').val(config);
 			console.log(config);
 			var obj = JSON.parse(config);
 			if(obj!==null){
