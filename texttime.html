@@ -13,6 +13,7 @@
 				<div data-role="header" class="jqm-header">
 					<h1>TextTime Configuration</h1>
 				</div>
+				<div id="textDiv">text</div>
 				<div data-role="content">
 					<div data-role="fieldcontain">
 						<label for="background">Background:</label>
@@ -36,7 +37,6 @@
 						</fieldset>
 					</div>
 				</div>
-				<div id="textDiv">text</div>
 			</div>
 		</form>
 		<script>				
@@ -57,7 +57,7 @@
           		document.location = "pebblejs://close";
 			}
 			var config = decodeURIComponent(window.location.search.substr(1));
-			document.getElementById("textDiv").innerHTML = "testtext";
+			document.getElementById("textDiv").innerHTML = window.location.search.substr(1);
 			console.log(config);
 			var obj = JSON.parse(config);
 			if(obj!==null){
