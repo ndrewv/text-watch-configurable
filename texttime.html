@@ -38,8 +38,7 @@
 				</div>
 			</div>
 		</form>
-		<div id="textDiv"></div>
-		<script>
+		<script>				
 			function submitForm(){
 				var variables = {};
 				var selects=this.form.getElementsByTagName('select');
@@ -48,17 +47,15 @@
 				}
 				console.log(variables);
 				console.log(JSON.stringify(variables));
-	            		var location = ''+'pebblejs://close#');
-	            		document.location = location+encodeURIComponent(JSON.stringify(variables));
-	            		console.log(location);
+	            var location = "pebblejs://close#"+encodeURIComponent(JSON.stringify(variables));
+	            console.log(location);
+	            document.location = location;
 			}
 			function cancelForm(){
 				console.log("Cancel");
-				var location = getQueryParam('return_to', 'pebblejs://close#');
-          			document.location = location;
+          		document.location = "pebblejs://close";
 			}
 			var config = decodeURIComponent(window.location.search.substr(1));
-			document.getElementById("textDiv").innerHTML = "test";
 			console.log(config);
 			var obj = JSON.parse(config);
 			if(obj!==null){
