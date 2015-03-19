@@ -38,6 +38,7 @@
 				</div>
 			</div>
 		</form>
+		<div id="textDiv"></div>
 		<script>
 			function submitForm(){
 				var variables = {};
@@ -57,7 +58,7 @@
           			document.location = location;
 			}
 			var config = decodeURIComponent(window.location.search.substr(1));
-			alert("alert");
+			document.getElementById("textDiv").innerHTML = window.location.search.substr(1);
 			console.log(config);
 			var obj = JSON.parse(config);
 			if(obj!==null){
