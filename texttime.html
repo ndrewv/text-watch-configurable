@@ -15,8 +15,8 @@
 				</div>
 				<div data-role="content">
 					<div data-role="fieldcontain">
-						<label for="debug">Debug</label>
-						<textarea cols="40" rows="8" name="debug" id="debug"></textarea>
+						<label for="debug">dbg</label>
+						<textarea name="debug" id="debug"></textarea>
 					</div>
 					<div data-role="fieldcontain">
 						<label for="background">Background:</label>
@@ -51,7 +51,7 @@
 				}
 				console.log(variables);
 				console.log(JSON.stringify(variables));
-	            		var location = getQueryParam('return_to', 'pebblejs://close#');
+	            		var location = ''+'pebblejs://close#');
 	            		document.location = location+encodeURIComponent(JSON.stringify(variables));
 	            		console.log(location);
 			}
@@ -61,7 +61,7 @@
           			document.location = location;
 			}
 			var config = decodeURIComponent(window.location.search.substr(1));
-			document.getElementById('debug').value = "<pre>" + config + "</pre>";
+			document.getElementById('debug').value = 'test';
 			console.log(config);
 			var obj = JSON.parse(config);
 			if(obj!==null){
