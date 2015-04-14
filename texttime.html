@@ -82,13 +82,13 @@
 			}
 			console.log(variables);
 			console.log(JSON.stringify(variables));
-		            var location = return_to+encodeURIComponent(JSON.stringify(variables));
-		            console.log(location);
-	            document.location = location;
+		        var location = return_to+encodeURIComponent(JSON.stringify(variables));
+		        console.log(location);
+	            	document.location = location;
 			}
 			function cancelForm(){
 				console.log("Cancel");
-          			document.location = "pebblejs://close";
+          			document.location = return_to;
 			}
 			
 			var return_to = getQueryParam('return_to', 'pebblejs://close#');
