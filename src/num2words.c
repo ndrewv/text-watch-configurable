@@ -32,19 +32,17 @@ static const char* const TENS[] = {
   "twenty",
   "thirty",
   "forty",
-  "fifty",
-  "sixty",
-  "seventy",
-  "eighty",
-  "ninety"
+  "fifty"
 };
 
 static const char* STR_OH_CLOCK = "o'clock";
-static const char* STR_NOON = "noon";
+static const char* STR_NOON = "midday";
 static const char* STR_MID = "mid";
 static const char* STR_NIGHT = "night";
-static const char* STR_OH = "oh";
+static const char* STR_OH = "o";
 static const char* STR_TEEN = "teen";
+
+static int date_lower = 0;
 
 static size_t append_number(char* words, int num) {
   int tens_val = num / 10;
@@ -143,4 +141,16 @@ void fuzzy_hours_to_words(struct tm *t, char* words) {
 
 void fuzzy_dates_to_words(struct tm *t, char* words) {
     strftime(words, 15, DATE_FORMAT, t);
+  if(date_lower == 1){
+    char c = *words;
+    if (c >= 'A' && c <= 'Z') {
+        *words += 0x20;
+    }
+  }
 }
+
+void fuzzy_set_date_lower(int isLower){
+  date_lower = isLower;
+}
+
+

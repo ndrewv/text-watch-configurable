@@ -1,7 +1,9 @@
 {
     "appKeys": {
+        "align": 1,
         "background": 0,
-        "align": 1
+        "capital": 2,
+        "fontstyle": 3
     },
     "capabilities": [
         "configurable"
@@ -10,8 +12,136 @@
     "longName": "Texttime",
     "projectType": "native",
     "resources": {
-        "media": []
+        "media": [
+            {
+                "characterRegex": "[a-zA-Z0-9' ]",
+                "file": "fonts/eurof55.ttf",
+                "name": "FONT_EURO_44",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-z]",
+                "file": "fonts/eurof75.ttf",
+                "name": "FONT_EURO_BOLD_44",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z0-9' ]",
+                "file": "fonts/Archistico Simple.ttf",
+                "name": "FONT_ARCHISTICO_34",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z0-9' ]",
+                "file": "fonts/LCDMN___.TTF",
+                "name": "FONT_LCD_34",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z0-9' ]",
+                "file": "fonts/college.ttf",
+                "name": "FONT_COLLEGE_38",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-z]",
+                "file": "fonts/collegeb.ttf",
+                "name": "FONT_COLLEGE_BOLD_38",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z0-9' ]",
+                "file": "fonts/daniel.ttf",
+                "name": "FONT_DANIEL_34",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-z]",
+                "file": "fonts/danielbd.ttf",
+                "name": "FONT_DANIEL_BOLD_34",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z0-9' ]",
+                "file": "fonts/Quicksand_Dash.ttf",
+                "name": "FONT_QUICK_36",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z0-9' ]",
+                "file": "fonts/Florsn33.ttf",
+                "name": "FONT_FLO_34",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-z]",
+                "file": "fonts/Florsn37.ttf",
+                "name": "FONT_FLO_BOLD_34",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z0-9' ]",
+                "file": "fonts/visitor1.ttf",
+                "name": "FONT_VISITOR_30",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z0-9' ]",
+                "file": "fonts/techniqu.ttf",
+                "name": "FONT_TECH_22",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-z]",
+                "file": "fonts/techniqo.ttf",
+                "name": "FONT_TECH_BOLD_22",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z0-9' ]",
+                "file": "fonts/Stencilia-A.ttf",
+                "name": "FONT_STENCILIA_34",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z0-9' ]",
+                "file": "fonts/Starjedi.ttf",
+                "name": "FONT_STAR_26",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-z]",
+                "file": "fonts/Starjhol.ttf",
+                "name": "FONT_STAR_BOLD_26",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z0-9' ]",
+                "file": "fonts/retro.ttf",
+                "name": "FONT_RETRO_44",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-z]",
+                "file": "fonts/Philosopher-Bold.ttf",
+                "name": "FONT_PHILO_BOLD_38",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z0-9' ]",
+                "file": "fonts/Philosopher-Regular.ttf",
+                "name": "FONT_PHILO_38",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z0-9' ]",
+                "file": "fonts/Fineliner_Script.ttf",
+                "name": "FONT_FINELINER_38",
+                "type": "font"
+            }
+        ]
     },
+    "sdkVersion": "2",
     "shortName": "Texttime",
     "uuid": "9c0f8228-066d-4691-b468-23d93287f5b4",
     "versionCode": 1,

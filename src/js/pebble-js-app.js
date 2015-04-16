@@ -1,4 +1,3 @@
-var initialised = false;
 var uri = 'http://ndrewv.github.io/text-watch-configurable/texttime.html';
 
 function appMessageAck(e) {
@@ -10,34 +9,24 @@ function appMessageNack(e) {
 }
 
 Pebble.addEventListener("ready", function() {
-  initialised = true;
-  var configuration = JSON.parse(localStorage.getItem('configuration'));
-  Pebble.sendAppMessage(configuration, appMessageAck, appMessageNack);
 });
 
 Pebble.addEventListener("showConfiguration", function() {
     var configuration = JSON.parse(localStorage.getItem('configuration'));
-    var target = "";
-    console.log("showing configuration");
+    var target = uri + '?';
     if (configuration !== null) {
         console.log("read config: " + JSON.stringify(configuration));
-        target = uri+ '?' + JSON.stringify(configuration);
+        target += 'opts=' + encodeURIComponent(JSON.stringify(configuration));
     }
     console.log(target);
     Pebble.openURL(target);
 });
 
 Pebble.addEventListener("webviewclosed", function(e) {
-    console.log("configuration closed");
-    if (e.response !== '') {
-       console.log("config not null");
-        var resp = decodeURIComponent(e.response);
-        console.log(resp);
-      var configuration = JSON.parse(resp);
+  if ((e.response !== '') && (e.response !== '{}')) { 
+        var configuration = JSON.parse(decodeURIComponent(e.response));
         console.log('Configuration window returned: ' + JSON.stringify(configuration));
         localStorage.setItem('configuration', JSON.stringify(configuration));
         Pebble.sendAppMessage(configuration, appMessageAck, appMessageNack);
-    } else {
-        console.log("no config received");
     }
 });
