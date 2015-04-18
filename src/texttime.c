@@ -2,20 +2,28 @@
 #include <num2words.h>
   
 //#define DEBUG 1
+  
+#define version_major 1 
+#define version_minor 1 
+
 #define NUM_LAYERS 4
 #define TIME_SLOT_ANIMATION_DURATION 700
 
-#define DEFAULT_FONT_UPPER FONT_KEY_BITHAM_42_BOLD
-#define DEFAULT_FONT_LOWER FONT_KEY_BITHAM_42_LIGHT
-//options reference for storage
+  //options reference for storage
 #define FLASH_OPTIONS 0
 //options reference for messages
 #define KEY_BACKGROUND 0
 #define KEY_ALIGN 1
 #define KEY_CAPITAL 2
 #define KEY_FONT_STYLE 3
-#define KEY_LIMIT 4
-  
+#define KEY_DATE_STYLE 4
+#define KEY_VERT_OFFSET 5
+#define KEY_ANIMATION 6
+#define KEY_LIMIT 7
+
+#define DEFAULT_FONT_UPPER FONT_KEY_BITHAM_42_BOLD
+#define DEFAULT_FONT_LOWER FONT_KEY_BITHAM_42_LIGHT
+
 //define options for fonts
 #define KEY_FONT_DEFAULT 0
 //total number of system font selections
@@ -38,7 +46,8 @@
 //total number of custom fonts
 #define KEY_CUSTOM_FONT_SIZE 14
 
-static const uint32_t s_custom_fonts_upper[KEY_CUSTOM_FONT_SIZE] = {RESOURCE_ID_FONT_DANIEL_BOLD_34, RESOURCE_ID_FONT_FINELINER_38, RESOURCE_ID_FONT_PHILO_BOLD_38, RESOURCE_ID_FONT_RETRO_44, RESOURCE_ID_FONT_STAR_BOLD_26, RESOURCE_ID_FONT_STENCILIA_34, RESOURCE_ID_FONT_TECH_BOLD_22, RESOURCE_ID_FONT_VISITOR_30, RESOURCE_ID_FONT_FLO_BOLD_34, RESOURCE_ID_FONT_QUICK_36, RESOURCE_ID_FONT_COLLEGE_BOLD_38, RESOURCE_ID_FONT_LCD_34, RESOURCE_ID_FONT_ARCHISTICO_34, RESOURCE_ID_FONT_EURO_BOLD_44};
+//font reference array
+static const uint32_t s_custom_fonts_upper[KEY_CUSTOM_FONT_SIZE] = {RESOURCE_ID_FONT_DANIEL_BOLD_34, RESOURCE_ID_FONT_FINELINER_38, RESOURCE_ID_FONT_PHILO_BOLD_38, RESOURCE_ID_FONT_RETRO_44, RESOURCE_ID_FONT_STAR_BOLD_26, RESOURCE_ID_FONT_STENCILIA_34, RESOURCE_ID_FONT_TECH_BOLD_22, RESOURCE_ID_FONT_VISITOR_30, RESOURCE_ID_FONT_FLO_BOLD_34, RESOURCE_ID_FONT_QUICK_BOLD_36, RESOURCE_ID_FONT_COLLEGE_BOLD_38, RESOURCE_ID_FONT_LCD_34, RESOURCE_ID_FONT_ARCHISTICO_34, RESOURCE_ID_FONT_EURO_BOLD_44};
 static const uint32_t s_custom_fonts_lower[KEY_CUSTOM_FONT_SIZE] = {RESOURCE_ID_FONT_DANIEL_34, RESOURCE_ID_FONT_FINELINER_38, RESOURCE_ID_FONT_PHILO_38, RESOURCE_ID_FONT_RETRO_44, RESOURCE_ID_FONT_STAR_26, RESOURCE_ID_FONT_STENCILIA_34, RESOURCE_ID_FONT_TECH_22, RESOURCE_ID_FONT_VISITOR_30, RESOURCE_ID_FONT_FLO_34, RESOURCE_ID_FONT_QUICK_36, RESOURCE_ID_FONT_COLLEGE_38, RESOURCE_ID_FONT_LCD_34, RESOURCE_ID_FONT_ARCHISTICO_34, RESOURCE_ID_FONT_EURO_44};
 
 //animation handlers
@@ -110,6 +119,12 @@ void update_configuration(void)
     text_layer_set_font(s_layers[MINUTES]->label, fonts_get_system_font(DEFAULT_FONT_LOWER));
     text_layer_set_font(s_layers[TENS]->label, fonts_get_system_font(DEFAULT_FONT_LOWER));
     text_layer_set_font(s_layers[DATE]->label, fonts_get_system_font(DEFAULT_FONT_LOWER));
+  }
+  
+  if(s_options[KEY_DATE_STYLE]){
+    
+  }else{
+    
   }
   
   for(int j = 0; j < NUM_LAYERS; j++){
@@ -246,6 +261,7 @@ void handle_inbox_received(DictionaryIterator *iterator, void *context)
   }
   persist_write_data(FLASH_OPTIONS, &s_options, sizeof(s_options));
   fuzzy_set_date_lower(s_options[KEY_CAPITAL]);
+  fuzzy_set_date_style(s_options[KEY_DATE_STYLE]);
   update_configuration();
   
   //refresh the layers
@@ -300,6 +316,7 @@ static void handle_main_window_load(Window *window) {
 #endif
   }
   fuzzy_set_date_lower(s_options[KEY_CAPITAL]);
+  fuzzy_set_date_style(s_options[KEY_DATE_STYLE]);
   s_custom_font_upper = fonts_load_custom_font(resource_get_handle(s_custom_fonts_upper[0]));
   s_custom_font_lower = fonts_load_custom_font(resource_get_handle(s_custom_fonts_lower[0]));
 

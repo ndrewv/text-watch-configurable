@@ -3,6 +3,7 @@
         "align": 1,
         "background": 0,
         "capital": 2,
+        "datestyle": 4,
         "fontstyle": 3
     },
     "capabilities": [
@@ -13,6 +14,18 @@
     "projectType": "native",
     "resources": {
         "media": [
+            {
+                "characterRegex": "[a-z]",
+                "file": "fonts/Quicksand_Bold.ttf",
+                "name": "FONT_QUICK_BOLD_36",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z0-9' ]",
+                "file": "fonts/Quicksand_Book.ttf",
+                "name": "FONT_QUICK_36",
+                "type": "font"
+            },
             {
                 "characterRegex": "[a-zA-Z0-9' ]",
                 "file": "fonts/eurof55.ttf",
@@ -59,12 +72,6 @@
                 "characterRegex": "[a-z]",
                 "file": "fonts/danielbd.ttf",
                 "name": "FONT_DANIEL_BOLD_34",
-                "type": "font"
-            },
-            {
-                "characterRegex": "[a-zA-Z0-9' ]",
-                "file": "fonts/Quicksand_Dash.ttf",
-                "name": "FONT_QUICK_36",
                 "type": "font"
             },
             {
@@ -145,7 +152,7 @@
     "shortName": "Texttime",
     "uuid": "9c0f8228-066d-4691-b468-23d93287f5b4",
     "versionCode": 1,
-    "versionLabel": "1.0",
+    "versionLabel": "1.1",
     "watchapp": {
         "watchface": true
     }

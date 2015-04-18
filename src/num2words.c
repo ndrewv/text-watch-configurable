@@ -43,6 +43,7 @@ static const char* STR_OH = "o";
 static const char* STR_TEEN = "teen";
 
 static int date_lower = 0;
+static int date_style = 0;
 
 static size_t append_number(char* words, int num) {
   int tens_val = num / 10;
@@ -140,8 +141,21 @@ void fuzzy_hours_to_words(struct tm *t, char* words) {
 }
 
 void fuzzy_dates_to_words(struct tm *t, char* words) {
-    strftime(words, 15, DATE_FORMAT, t);
-  if(date_lower == 1){
+  switch(date_style){
+    case 2:{
+    memset(words, 0, BUFFER_SIZE);
+    }
+    break;
+    case 1:
+      strftime(words, 15, DAY_FORMAT, t);
+    break;
+    case 0:
+    default:
+      strftime(words, 15, DATE_FORMAT, t);
+    break;
+    
+  }
+  if((date_lower == 1)&&(date_style < 2)){
     char c = *words;
     if (c >= 'A' && c <= 'Z') {
         *words += 0x20;
@@ -153,4 +167,6 @@ void fuzzy_set_date_lower(int isLower){
   date_lower = isLower;
 }
 
-
+void fuzzy_set_date_style(int style){
+  date_style = style;
+}
