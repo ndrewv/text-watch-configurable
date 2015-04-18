@@ -4,7 +4,7 @@
 //#define DEBUG 1
   
 #define version_major 1 
-#define version_minor 1 
+#define version_minor 2
 
 #define NUM_LAYERS 4
 #define TIME_SLOT_ANIMATION_DURATION 700
@@ -17,9 +17,9 @@
 #define KEY_CAPITAL 2
 #define KEY_FONT_STYLE 3
 #define KEY_DATE_STYLE 4
-#define KEY_VERT_OFFSET 5
-#define KEY_ANIMATION 6
-#define KEY_LIMIT 7
+//#define KEY_VERT_OFFSET 5
+//#define KEY_ANIMATION 6
+#define KEY_LIMIT 5
 
 #define DEFAULT_FONT_UPPER FONT_KEY_BITHAM_42_BOLD
 #define DEFAULT_FONT_LOWER FONT_KEY_BITHAM_42_LIGHT
