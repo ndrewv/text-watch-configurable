@@ -1,4 +1,4 @@
-var uri = 'http://ndrewv.github.io/text-watch-configurable/texttime-1-1.html';
+var uri = 'http://ndrewv.github.io/text-watch-configurable/texttime-1-2.html';
 
 function appMessageAck(e) {
     console.log("options sent to Pebble successfully");

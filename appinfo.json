@@ -1,10 +1,12 @@
 {
     "appKeys": {
         "align": 1,
+        "animation": 6,
         "background": 0,
         "capital": 2,
         "datestyle": 4,
-        "fontstyle": 3
+        "fontstyle": 3,
+        "vertoffset": 5
     },
     "capabilities": [
         "configurable"
@@ -152,7 +154,7 @@
     "shortName": "Texttime",
     "uuid": "9c0f8228-066d-4691-b468-23d93287f5b4",
     "versionCode": 1,
-    "versionLabel": "1.1",
+    "versionLabel": "1.2",
     "watchapp": {
         "watchface": true
     }

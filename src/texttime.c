@@ -17,9 +17,9 @@
 #define KEY_CAPITAL 2
 #define KEY_FONT_STYLE 3
 #define KEY_DATE_STYLE 4
-//#define KEY_VERT_OFFSET 5
-//#define KEY_ANIMATION 6
-#define KEY_LIMIT 5
+#define KEY_VERT_OFFSET 5
+#define KEY_ANIMATION 6
+#define KEY_LIMIT 7
 
 #define DEFAULT_FONT_UPPER FONT_KEY_BITHAM_42_BOLD
 #define DEFAULT_FONT_LOWER FONT_KEY_BITHAM_42_LIGHT
@@ -50,7 +50,7 @@
 static const uint32_t s_custom_fonts_upper[KEY_CUSTOM_FONT_SIZE] = {RESOURCE_ID_FONT_DANIEL_BOLD_34, RESOURCE_ID_FONT_FINELINER_38, RESOURCE_ID_FONT_PHILO_BOLD_38, RESOURCE_ID_FONT_RETRO_44, RESOURCE_ID_FONT_STAR_BOLD_26, RESOURCE_ID_FONT_STENCILIA_34, RESOURCE_ID_FONT_TECH_BOLD_22, RESOURCE_ID_FONT_VISITOR_30, RESOURCE_ID_FONT_FLO_BOLD_34, RESOURCE_ID_FONT_QUICK_BOLD_36, RESOURCE_ID_FONT_COLLEGE_BOLD_38, RESOURCE_ID_FONT_LCD_34, RESOURCE_ID_FONT_ARCHISTICO_34, RESOURCE_ID_FONT_EURO_BOLD_44};
 static const uint32_t s_custom_fonts_lower[KEY_CUSTOM_FONT_SIZE] = {RESOURCE_ID_FONT_DANIEL_34, RESOURCE_ID_FONT_FINELINER_38, RESOURCE_ID_FONT_PHILO_38, RESOURCE_ID_FONT_RETRO_44, RESOURCE_ID_FONT_STAR_26, RESOURCE_ID_FONT_STENCILIA_34, RESOURCE_ID_FONT_TECH_22, RESOURCE_ID_FONT_VISITOR_30, RESOURCE_ID_FONT_FLO_34, RESOURCE_ID_FONT_QUICK_36, RESOURCE_ID_FONT_COLLEGE_38, RESOURCE_ID_FONT_LCD_34, RESOURCE_ID_FONT_ARCHISTICO_34, RESOURCE_ID_FONT_EURO_44};
 
-//animation handlers
+//animation handler prototypes
 void handle_slide_out_animation_stopped(Animation *slide_out_animation, bool finished, void *context);
 void handle_slide_in_animation_stopped(Animation *slide_out_animation, bool finished, void *context);
 
@@ -60,7 +60,7 @@ enum e_align {
 };
 
 enum e_layer_names {
-	  MINUTES= 0, TENS, HOURS, DATE
+	  HOURS= 0, TENS, MINUTES, DATE
 };
 
 typedef enum e_direction {
@@ -86,25 +86,14 @@ static int s_options [KEY_LIMIT];
 /*  Apply the application settings from the options array */
 void update_configuration(void)
 {
+  //update background colour
   if(s_options[KEY_BACKGROUND] == 0){
     layer_set_hidden(inverter_layer_get_layer(s_inverter_layer), true);
   }else{
     layer_set_hidden(inverter_layer_get_layer(s_inverter_layer), false);
   }
   
-  GTextAlignment align = GTextAlignmentLeft;
-  switch(s_options[KEY_ALIGN]){
-    case ALIGN_CENTRE:
-    align = GTextAlignmentCenter;
-    break;
-    case ALIGN_RIGHT:
-    align = GTextAlignmentRight;
-    break;
-    case ALIGN_LEFT:
-    default:
-    break;
-  }
-  
+  //update font style
   if(s_options[KEY_FONT_STYLE] > 0){
     fonts_unload_custom_font(s_custom_font_upper);
     fonts_unload_custom_font(s_custom_font_lower);
@@ -121,14 +110,25 @@ void update_configuration(void)
     text_layer_set_font(s_layers[DATE]->label, fonts_get_system_font(DEFAULT_FONT_LOWER));
   }
   
-  if(s_options[KEY_DATE_STYLE]){
-    
-  }else{
-    
+  //update text alignment
+  GTextAlignment align = GTextAlignmentLeft;
+  switch(s_options[KEY_ALIGN]){
+    case ALIGN_CENTRE:
+    align = GTextAlignmentCenter;
+    break;
+    case ALIGN_RIGHT:
+    align = GTextAlignmentRight;
+    break;
+    case ALIGN_LEFT:
+    default:
+    break;
   }
   
+  //update alignment
   for(int j = 0; j < NUM_LAYERS; j++){
-    text_layer_set_text_alignment((TextLayer*)text_layer_get_layer(s_layers[j]->label), align);
+    TextLayer* layer = (TextLayer*)text_layer_get_layer(s_layers[j]->label);
+    text_layer_set_text_alignment(layer, align);
+    layer_set_frame((Layer*)layer, GRect(0, ((j*38) + s_options[KEY_VERT_OFFSET]), layer_get_bounds(window_get_root_layer(s_main_window)).size.w, 42));
   }
 }
 
@@ -138,7 +138,7 @@ void animate(CommonWordsData *layer, eDirection direction, GRect *from_frame,
 	layer->prop_animation = property_animation_create_layer_frame(
 			text_layer_get_layer(layer->label), from_frame, to_frame);
 	animation_set_duration((Animation*) layer->prop_animation,
-			TIME_SLOT_ANIMATION_DURATION);
+			s_options[KEY_ANIMATION]);
 	if(direction == OUT){
 		animation_set_curve((Animation*) layer->prop_animation, AnimationCurveEaseIn);
 		animation_set_handlers((Animation*) layer->prop_animation,(AnimationHandlers ) { .stopped = handle_slide_out_animation_stopped },(void *) layer);
@@ -156,6 +156,7 @@ void init_layer(Layer *window_layer, CommonWordsData *layer, GRect rect,
 	text_layer_set_background_color(layer->label, GColorClear);
 	text_layer_set_text_color(layer->label, GColorWhite);
 	text_layer_set_font(layer->label, font);
+  layer_set_clips((Layer*)layer->label, false);
 	layer_add_child(window_layer, text_layer_get_layer(layer->label));
 }
 
@@ -246,6 +247,7 @@ static void handle_minute_tick(struct tm *t, TimeUnits units_changed) {
 /* App message input handler */
 void handle_inbox_received(DictionaryIterator *iterator, void *context)
 {
+  //unsubscribe to prevent update collision
   tick_timer_service_unsubscribe();
   animation_unschedule_all();
   
@@ -277,9 +279,8 @@ void handle_inbox_received(DictionaryIterator *iterator, void *context)
   for (int i = 0; i < NUM_LAYERS; ++i) {
 		s_layers[i]->update(s_new_time, s_layers[i]->buffer);
 		slide_in(s_layers[i]);
-    //update_layer(s_layers[i], s_new_time);
 	}
-  // Register with TickTimerService
+  // Reregister with TickTimerService
 	tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
 }
 
@@ -312,13 +313,16 @@ static void handle_main_window_load(Window *window) {
   if(persist_exists(FLASH_OPTIONS)){
      persist_read_data(FLASH_OPTIONS, &s_options, sizeof(s_options));
 #ifdef DEBUG
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Read options %d - %d, %d - %d, %d - %d, %d - %d", KEY_BACKGROUND, s_options[KEY_BACKGROUND], KEY_ALIGN, s_options[KEY_ALIGN], KEY_CAPITAL, s_options[KEY_CAPITAL], KEY_FONT_STYLE, s_options[KEY_FONT_STYLE]);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Read options %d - %d, %d - %d, %d - %d, %d - %d, %d - %d", KEY_BACKGROUND, s_options[KEY_BACKGROUND], KEY_ALIGN, s_options[KEY_ALIGN], KEY_CAPITAL, s_options[KEY_CAPITAL], KEY_FONT_STYLE, s_options[KEY_FONT_STYLE], KEY_DATE_STYLE, s_options[KEY_DATE_STYLE]);
 #endif
+  }else{
+    s_options[KEY_ANIMATION] = TIME_SLOT_ANIMATION_DURATION;
   }
   fuzzy_set_date_lower(s_options[KEY_CAPITAL]);
   fuzzy_set_date_style(s_options[KEY_DATE_STYLE]);
-  s_custom_font_upper = fonts_load_custom_font(resource_get_handle(s_custom_fonts_upper[0]));
-  s_custom_font_lower = fonts_load_custom_font(resource_get_handle(s_custom_fonts_lower[0]));
+  //load default font
+  s_custom_font_upper = fonts_load_custom_font(resource_get_handle(s_custom_fonts_upper[s_options[KEY_FONT_STYLE]]));
+  s_custom_font_lower = fonts_load_custom_font(resource_get_handle(s_custom_fonts_lower[s_options[KEY_FONT_STYLE]]));
 
 	// Update time callbacks
 	s_layers[MINUTES]->update = &fuzzy_sminutes_to_words;
@@ -331,20 +335,19 @@ static void handle_main_window_load(Window *window) {
 
 	// initialise layers
   //hours
-	init_layer(window_layer, s_layers[HOURS], GRect(0, 0, bounds.size.w, 50),
+	init_layer(window_layer, s_layers[HOURS], GRect(0, s_options[KEY_VERT_OFFSET], bounds.size.w, 42),
 			fonts_get_system_font(DEFAULT_FONT_UPPER));
 
 	// tens of minutes
-	init_layer(window_layer, s_layers[TENS], GRect(0, 38, bounds.size.w, 50),
+	init_layer(window_layer, s_layers[TENS], GRect(0, 38 + s_options[KEY_VERT_OFFSET], bounds.size.w, 42),
 			fonts_get_system_font(DEFAULT_FONT_LOWER));
 
 	// minutes
-	init_layer(window_layer, s_layers[MINUTES],
-			GRect(0, 76, bounds.size.w, 50),
+	init_layer(window_layer, s_layers[MINUTES], GRect(0, 76 + s_options[KEY_VERT_OFFSET], bounds.size.w, 42),
 			fonts_get_system_font(DEFAULT_FONT_LOWER));
 
 	//Date
-	init_layer(window_layer, s_layers[DATE], GRect(0, 114, bounds.size.w, 50),
+	init_layer(window_layer, s_layers[DATE], GRect(0, 114 + s_options[KEY_VERT_OFFSET], bounds.size.w, 42),
 			fonts_get_system_font(DEFAULT_FONT_LOWER));
 
 	s_inverter_layer = inverter_layer_create(GRect(0, 0, 144, 168));
