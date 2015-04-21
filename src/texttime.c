@@ -4,14 +4,14 @@
 //#define DEBUG 1
   
 #define version_major 1 
-#define version_minor 3
+#define version_minor 4
 
 #define NUM_LAYERS 4
 #define TIME_SLOT_ANIMATION_DURATION 700
 
-  //options reference for storage
+  //flash storage key
 #define FLASH_OPTIONS 0
-//options reference for messages
+//option message keys
 #define KEY_BACKGROUND 0
 #define KEY_ALIGN 1
 #define KEY_CAPITAL 2
@@ -46,13 +46,15 @@
 //total number of custom fonts
 #define KEY_CUSTOM_FONT_SIZE 14
 
+//layer reference array
+  static const uint32_t s_offset_base[NUM_LAYERS] = {0, 38, 76, 114};
+  static const char *s_font_base[NUM_LAYERS] = {DEFAULT_FONT_UPPER, DEFAULT_FONT_LOWER, DEFAULT_FONT_LOWER, DEFAULT_FONT_LOWER};
 //font reference array
 static const uint32_t s_custom_fonts_upper[KEY_CUSTOM_FONT_SIZE] = {RESOURCE_ID_FONT_DANIEL_BOLD_32, RESOURCE_ID_FONT_FINELINER_38, RESOURCE_ID_FONT_PHILO_BOLD_38, RESOURCE_ID_FONT_RETRO_44, RESOURCE_ID_FONT_STAR_BOLD_26, RESOURCE_ID_FONT_STENCILIA_34, RESOURCE_ID_FONT_TECH_BOLD_22, RESOURCE_ID_FONT_VISITOR_30, RESOURCE_ID_FONT_FLO_BOLD_34, RESOURCE_ID_FONT_QUICK_BOLD_36, RESOURCE_ID_FONT_COLLEGE_BOLD_38, RESOURCE_ID_FONT_LCD_34, RESOURCE_ID_FONT_ARCHISTICO_34, RESOURCE_ID_FONT_EURO_BOLD_44};
 static const uint32_t s_custom_fonts_lower[KEY_CUSTOM_FONT_SIZE] = {RESOURCE_ID_FONT_DANIEL_32, RESOURCE_ID_FONT_FINELINER_38, RESOURCE_ID_FONT_PHILO_38, RESOURCE_ID_FONT_RETRO_44, RESOURCE_ID_FONT_STAR_26, RESOURCE_ID_FONT_STENCILIA_34, RESOURCE_ID_FONT_TECH_22, RESOURCE_ID_FONT_VISITOR_30, RESOURCE_ID_FONT_FLO_34, RESOURCE_ID_FONT_QUICK_36, RESOURCE_ID_FONT_COLLEGE_38, RESOURCE_ID_FONT_LCD_34, RESOURCE_ID_FONT_ARCHISTICO_34, RESOURCE_ID_FONT_EURO_44};
 
 //animation handler prototypes
 void handle_slide_out_animation_stopped(Animation *slide_out_animation, bool finished, void *context);
-void handle_slide_in_animation_stopped(Animation *slide_out_animation, bool finished, void *context);
 
 //structs and enums
 enum e_align {
@@ -69,7 +71,8 @@ typedef enum e_direction {
 
 typedef struct CommonWordsData {
 	TextLayer *label;
-	PropertyAnimation *prop_animation;
+	PropertyAnimation *prop_animation_out;
+  PropertyAnimation *prop_animation_in;
 	char buffer[BUFFER_SIZE];
   void (*update)(struct tm *t, char *words);
 } CommonWordsData;
@@ -79,8 +82,8 @@ static Window *s_main_window;
 static CommonWordsData *s_layers[4];
 static InverterLayer *s_inverter_layer;
 static struct tm *s_new_time;
-static GFont s_custom_font_upper;
-static GFont s_custom_font_lower;
+static GFont *s_custom_font_upper;
+static GFont *s_custom_font_lower;
 static int s_options [KEY_LIMIT];
 
 /*  Apply the application settings from the options array */
@@ -95,14 +98,14 @@ void update_configuration(void)
   
   //update font style
   if(s_options[KEY_FONT_STYLE] > 0){
-    fonts_unload_custom_font(s_custom_font_upper);
-    fonts_unload_custom_font(s_custom_font_lower);
-    s_custom_font_upper = fonts_load_custom_font(resource_get_handle(s_custom_fonts_upper[(s_options[KEY_FONT_STYLE]-KEY_SYSTEM_FONT_SIZE)]));
-    s_custom_font_lower = fonts_load_custom_font(resource_get_handle(s_custom_fonts_lower[(s_options[KEY_FONT_STYLE]-KEY_SYSTEM_FONT_SIZE)]));
-    text_layer_set_font(s_layers[HOURS]->label, s_custom_font_upper);
-    text_layer_set_font(s_layers[MINUTES]->label, s_custom_font_lower);
-    text_layer_set_font(s_layers[TENS]->label, s_custom_font_lower);
-    text_layer_set_font(s_layers[DATE]->label, s_custom_font_lower);
+    fonts_unload_custom_font(*s_custom_font_upper);
+    fonts_unload_custom_font(*s_custom_font_lower);
+    *s_custom_font_upper = fonts_load_custom_font(resource_get_handle(s_custom_fonts_upper[(s_options[KEY_FONT_STYLE]-KEY_SYSTEM_FONT_SIZE)]));
+    *s_custom_font_lower = fonts_load_custom_font(resource_get_handle(s_custom_fonts_lower[(s_options[KEY_FONT_STYLE]-KEY_SYSTEM_FONT_SIZE)]));
+    text_layer_set_font(s_layers[HOURS]->label, *s_custom_font_upper);
+    text_layer_set_font(s_layers[MINUTES]->label, *s_custom_font_lower);
+    text_layer_set_font(s_layers[TENS]->label, *s_custom_font_lower);
+    text_layer_set_font(s_layers[DATE]->label, *s_custom_font_lower);
   }else{
     text_layer_set_font(s_layers[HOURS]->label, fonts_get_system_font(DEFAULT_FONT_UPPER));
     text_layer_set_font(s_layers[MINUTES]->label, fonts_get_system_font(DEFAULT_FONT_LOWER));
@@ -124,29 +127,27 @@ void update_configuration(void)
     break;
   }
   
-  //update alignment
+  //apply update
   for(int j = 0; j < NUM_LAYERS; j++){
     TextLayer* layer = (TextLayer*)text_layer_get_layer(s_layers[j]->label);
     text_layer_set_text_alignment(layer, align);
     layer_set_frame((Layer*)layer, GRect(0, ((j*38) + s_options[KEY_VERT_OFFSET]), layer_get_bounds(window_get_root_layer(s_main_window)).size.w, 42));
+    //update animations
+    GRect frame = layer_get_frame(window_get_root_layer(s_main_window));  
+    property_animation_destroy(s_layers[j]->prop_animation_out); 
+    property_animation_destroy(s_layers[j]->prop_animation_in); 
+    GRect from_frame = layer_get_frame(text_layer_get_layer(s_layers[j]->label));
+    GRect to_frame = GRect(-frame.size.w, from_frame.origin.y, frame.size.w, from_frame.size.h);
+    //create animations
+    s_layers[j]->prop_animation_out = property_animation_create_layer_frame(text_layer_get_layer(s_layers[j]->label), &from_frame, &to_frame);
+    animation_set_duration((Animation*) s_layers[j]->prop_animation_out, s_options[KEY_ANIMATION]);
+	  animation_set_curve((Animation*) s_layers[j]->prop_animation_out, AnimationCurveEaseIn);
+	  animation_set_handlers((Animation*) s_layers[j]->prop_animation_out,(AnimationHandlers ) { .stopped = handle_slide_out_animation_stopped },(void *) s_layers[j]);
+    to_frame = GRect(2 * frame.size.w, from_frame.origin.y, frame.size.w, from_frame.size.h);
+    s_layers[j]->prop_animation_in = property_animation_create_layer_frame(text_layer_get_layer(s_layers[j]->label), &to_frame, &from_frame);
+    animation_set_duration((Animation*) s_layers[j]->prop_animation_in, s_options[KEY_ANIMATION]);
+	  animation_set_curve((Animation*) s_layers[j]->prop_animation_in, AnimationCurveEaseOut);
   }
-}
-
-/*  Abstract animation function */
-void animate(CommonWordsData *layer, eDirection direction, GRect *from_frame,
-		GRect *to_frame) {
-	layer->prop_animation = property_animation_create_layer_frame(
-			text_layer_get_layer(layer->label), from_frame, to_frame);
-	animation_set_duration((Animation*) layer->prop_animation,
-			s_options[KEY_ANIMATION]);
-	if(direction == OUT){
-		animation_set_curve((Animation*) layer->prop_animation, AnimationCurveEaseIn);
-		animation_set_handlers((Animation*) layer->prop_animation,(AnimationHandlers ) { .stopped = handle_slide_out_animation_stopped },(void *) layer);
-	}else{
-		animation_set_curve((Animation*) layer->prop_animation, AnimationCurveEaseOut);
-		animation_set_handlers((Animation*) layer->prop_animation,(AnimationHandlers ) { .stopped = handle_slide_in_animation_stopped },(void *) layer);
-	}
-	animation_schedule((Animation*) layer->prop_animation);
 }
 
 /* Text Layer initialisation */
@@ -160,54 +161,29 @@ void init_layer(Layer *window_layer, CommonWordsData *layer, GRect rect,
 	layer_add_child(window_layer, text_layer_get_layer(layer->label));
 }
 
-/*  Updates the text layer */
-void update_layer(CommonWordsData *layer, struct tm *t) {
-	GRect from_frame = layer_get_frame(text_layer_get_layer(layer->label));
-	GRect frame = layer_get_frame(window_get_root_layer(s_main_window));
-
-	GRect to_frame = GRect(-frame.size.w, from_frame.origin.y, frame.size.w,
-			from_frame.size.h);
-
-	// Schedule the out animation
-		animate(layer, OUT, NULL, &to_frame);
-}
-
 /* Schedule new slide in animation for referenced text layer */
 void slide_in(CommonWordsData *layer) {
 	TextLayer * text_layer = layer->label;
 	GRect origin_frame = layer_get_frame(text_layer_get_layer(text_layer));
-
-	Layer *root_layer = window_get_root_layer(s_main_window);
-	GRect frame = layer_get_frame(root_layer);
-	GRect to_frame = GRect(0, origin_frame.origin.y, frame.size.w,
-			origin_frame.size.h);
+	GRect frame = layer_get_frame(window_get_root_layer(s_main_window));
 	GRect from_frame = GRect(2 * frame.size.w, origin_frame.origin.y,
 			frame.size.w, origin_frame.size.h);
 
 	layer_set_frame(text_layer_get_layer(text_layer), from_frame);
 	text_layer_set_text(layer->label, layer->buffer);
 
-	// Schedule the next animation
-	animate(layer, IN, &from_frame, &to_frame);
+  animation_schedule((Animation*) layer->prop_animation_in);
 }
 
 /* handler run when slide out animation completes */
 void handle_slide_out_animation_stopped(Animation *slide_out_animation, bool finished,
 		void *context) {
 	CommonWordsData *layer = (CommonWordsData *) context;
-    property_animation_destroy(layer->prop_animation); 
     //schedule slide in animation
     if(finished){
   		layer->update(s_new_time, layer->buffer);
-  		slide_in(layer);
+      slide_in(layer);
   	}
-}
-
-/* handler run when slide in animation completes */
-void handle_slide_in_animation_stopped(Animation *slide_out_animation, bool finished,
-		void *context) {
-	CommonWordsData *layer = (CommonWordsData *) context;
-	property_animation_destroy(layer->prop_animation);
 }
 
 /* minute tick handler */
@@ -219,14 +195,14 @@ static void handle_minute_tick(struct tm *t, TimeUnits units_changed) {
 #ifdef DEBUG
 			APP_LOG(APP_LOG_LEVEL_DEBUG, "Update layer %u", MINUTES);
 #endif
-			update_layer(s_layers[MINUTES], t);
+      animation_schedule((Animation*) s_layers[MINUTES]->prop_animation_out);
 		}
 		if (t->tm_min % 10 == 0 || (t->tm_min > 10 && t->tm_min < 20)
 				|| t->tm_min == 1) {
 #ifdef DEBUG
 			APP_LOG(APP_LOG_LEVEL_DEBUG, "Update layer %u", TENS);
 #endif
-			update_layer(s_layers[TENS], t);
+      animation_schedule((Animation*) s_layers[TENS]->prop_animation_out);
 		}
 	}
 	if ((units_changed & HOUR_UNIT) == HOUR_UNIT
@@ -234,13 +210,13 @@ static void handle_minute_tick(struct tm *t, TimeUnits units_changed) {
 #ifdef DEBUG
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Update layer %u", HOURS);
 #endif
-		update_layer(s_layers[HOURS], t);
+    animation_schedule((Animation*) s_layers[HOURS]->prop_animation_out);
 	}
 	if ((units_changed & DAY_UNIT) == DAY_UNIT) {
 #ifdef DEBUG
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Update layer %u", DATE);
 #endif
-		update_layer(s_layers[DATE], t);
+    animation_schedule((Animation*) s_layers[DATE]->prop_animation_out);
 	}
 }
 
@@ -278,7 +254,7 @@ void handle_inbox_received(DictionaryIterator *iterator, void *context)
   
   for (int i = 0; i < NUM_LAYERS; ++i) {
 		s_layers[i]->update(s_new_time, s_layers[i]->buffer);
-		slide_in(s_layers[i]);
+	  slide_in(s_layers[i]);
 	}
   // Reregister with TickTimerService
 	tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
@@ -321,8 +297,10 @@ static void handle_main_window_load(Window *window) {
   fuzzy_set_date_lower(s_options[KEY_CAPITAL]);
   fuzzy_set_date_style(s_options[KEY_DATE_STYLE]);
   //load default font
-  s_custom_font_upper = fonts_load_custom_font(resource_get_handle(s_custom_fonts_upper[s_options[KEY_FONT_STYLE]]));
-  s_custom_font_lower = fonts_load_custom_font(resource_get_handle(s_custom_fonts_lower[s_options[KEY_FONT_STYLE]]));
+  s_custom_font_upper = malloc(sizeof(GFont));
+  s_custom_font_lower = malloc(sizeof(GFont));
+  *s_custom_font_upper = fonts_load_custom_font(resource_get_handle(s_custom_fonts_upper[s_options[KEY_FONT_STYLE]]));
+  *s_custom_font_lower = fonts_load_custom_font(resource_get_handle(s_custom_fonts_lower[s_options[KEY_FONT_STYLE]]));
 
 	// Update time callbacks
 	s_layers[MINUTES]->update = &fuzzy_sminutes_to_words;
@@ -334,22 +312,24 @@ static void handle_main_window_load(Window *window) {
 	GRect bounds = layer_get_bounds(window_layer);
 
 	// initialise layers
+	GRect frame = layer_get_frame(window_get_root_layer(s_main_window));
   //hours
-	init_layer(window_layer, s_layers[HOURS], GRect(0, s_options[KEY_VERT_OFFSET], bounds.size.w, 42),
-			fonts_get_system_font(DEFAULT_FONT_UPPER));
-
-	// tens of minutes
-	init_layer(window_layer, s_layers[TENS], GRect(0, 38 + s_options[KEY_VERT_OFFSET], bounds.size.w, 42),
-			fonts_get_system_font(DEFAULT_FONT_LOWER));
-
-	// minutes
-	init_layer(window_layer, s_layers[MINUTES], GRect(0, 76 + s_options[KEY_VERT_OFFSET], bounds.size.w, 42),
-			fonts_get_system_font(DEFAULT_FONT_LOWER));
-
-	//Date
-	init_layer(window_layer, s_layers[DATE], GRect(0, 114 + s_options[KEY_VERT_OFFSET], bounds.size.w, 42),
-			fonts_get_system_font(DEFAULT_FONT_LOWER));
-
+  for (int i = 0; i < NUM_LAYERS; ++i) {
+    init_layer(window_layer, s_layers[i], GRect(0, s_offset_base[i] + s_options[KEY_VERT_OFFSET], bounds.size.w, 42),
+		fonts_get_system_font(s_font_base[i]));
+    //calculate offsets
+    GRect from_frame = layer_get_frame(text_layer_get_layer(s_layers[i]->label));
+    GRect to_frame = GRect(-frame.size.w, from_frame.origin.y, frame.size.w, from_frame.size.h);
+    //create animations
+    s_layers[i]->prop_animation_out = property_animation_create_layer_frame(text_layer_get_layer(s_layers[i]->label), &from_frame, &to_frame);
+    animation_set_duration((Animation*) s_layers[i]->prop_animation_out, s_options[KEY_ANIMATION]);
+	  animation_set_curve((Animation*) s_layers[i]->prop_animation_out, AnimationCurveEaseIn);
+	  animation_set_handlers((Animation*) s_layers[i]->prop_animation_out,(AnimationHandlers ) { .stopped = handle_slide_out_animation_stopped },(void *) s_layers[i]);
+    to_frame = GRect(2 * frame.size.w, from_frame.origin.y, frame.size.w, from_frame.size.h);
+    s_layers[i]->prop_animation_in = property_animation_create_layer_frame(text_layer_get_layer(s_layers[i]->label), &to_frame, &from_frame);
+    animation_set_duration((Animation*) s_layers[i]->prop_animation_in, s_options[KEY_ANIMATION]);
+	  animation_set_curve((Animation*) s_layers[i]->prop_animation_in, AnimationCurveEaseOut);
+  }
 	s_inverter_layer = inverter_layer_create(GRect(0, 0, 144, 168));
 	layer_add_child(window_layer, inverter_layer_get_layer(s_inverter_layer));
 	update_configuration();
@@ -360,25 +340,29 @@ static void handle_main_window_load(Window *window) {
 
 	for (int i = 0; i < NUM_LAYERS; ++i) {
 		s_layers[i]->update(s_new_time, s_layers[i]->buffer);
-		slide_in(s_layers[i]);
+	  slide_in(s_layers[i]);
 	}
 }
 
 /* window deinit */
 static void handle_main_window_unload(Window *window) {
   if(s_custom_font_upper != 0){
-    fonts_unload_custom_font(s_custom_font_upper);
+    fonts_unload_custom_font(*s_custom_font_upper);
     s_custom_font_upper = 0;
   }
   if(s_custom_font_lower != 0){
-    fonts_unload_custom_font(s_custom_font_lower);
+    fonts_unload_custom_font(*s_custom_font_lower);
     s_custom_font_lower = 0;
   } 
 	for (int i = 0; i < NUM_LAYERS; ++i) {
+    property_animation_destroy(s_layers[i]->prop_animation_out); 
+    property_animation_destroy(s_layers[i]->prop_animation_in); 
 		text_layer_destroy(s_layers[i]->label);
 		free(s_layers[i]);
 		s_layers[i] = NULL;
 	}
+  free(s_custom_font_upper);
+  free(s_custom_font_lower);
 	inverter_layer_destroy(s_inverter_layer);
 }
 
@@ -399,15 +383,17 @@ static void init() {
 			app_message_inbox_size_maximum()) != APP_MSG_OK)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "App message open failed");
 
-	// Register with TickTimerService
-	tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
-
 	// Show the Window on the watch, with animated = true
 	window_stack_push(s_main_window, true);
+  
+  // Register with TickTimerService
+	tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
 }
 
 /* app deinit */
 static void deinit() {
+  //unsubscribe
+  tick_timer_service_unsubscribe();
 	//cancel any animations
 	animation_unschedule_all();
 	app_message_deregister_callbacks();
