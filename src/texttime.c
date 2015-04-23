@@ -163,13 +163,12 @@ void init_layer(Layer *window_layer, CommonWordsData *layer, GRect rect,
 
 /* Schedule new slide in animation for referenced text layer */
 void slide_in(CommonWordsData *layer) {
-	TextLayer * text_layer = layer->label;
-	GRect origin_frame = layer_get_frame(text_layer_get_layer(text_layer));
+	GRect origin_frame = layer_get_frame(text_layer_get_layer(layer->label));
 	GRect frame = layer_get_frame(window_get_root_layer(s_main_window));
 	GRect from_frame = GRect(2 * frame.size.w, origin_frame.origin.y,
 			frame.size.w, origin_frame.size.h);
 
-	layer_set_frame(text_layer_get_layer(text_layer), from_frame);
+	layer_set_frame(text_layer_get_layer(layer->label), from_frame);
 	text_layer_set_text(layer->label, layer->buffer);
 
   animation_schedule((Animation*) layer->prop_animation_in);
