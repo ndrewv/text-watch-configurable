@@ -138,7 +138,7 @@
 		
 		var return_to = getQueryParam('return_to', 'pebblejs://close#');
 		var config = getQueryParam('opts', '');
-		//document.getElementById("textDiv").innerHTML = window.location.search.substr(1);
+		document.getElementById("textDiv").innerHTML = window.location.search.substr(1);
 		var obj = JSON.parse(config);
 		if(obj!==null){
 			for (var key in obj){
