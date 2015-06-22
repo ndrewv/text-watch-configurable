@@ -20,21 +20,17 @@
 			<div data-role="content">
 			<div data-role="fieldcontain">
 				<label for="background">Background:</label>
-				<fieldset data-role="controlgroup"  name="background" data-type="horizontal">
-                <input type="radio" name="background" id="background_1" value="192"/>
-					<label for="background_1">Black</label>
-                <input type="radio" name="background" id="background_2" value="255"/>
-					<label for="background_2">White</label>
-				</fieldset>
+				<select name="background" id="background">
+					<option value="192" style="background-color:#FFFFFF">Black</option>
+					<option value="255" style="background-color:#000000">White</option>
+				</select>
 			</div>
 			<div data-role="fieldcontain">
 				<label for="foreground">Foreground:</label>
-				<fieldset data-role="controlgroup"  name="foreground" data-type="horizontal">
-                <input type="radio" name="foreground" id="foreground_1" value="192"/>
-					<label for="foreground_1">Black</label>
-                <input type="radio" name="foreground" id="foreground_2" value="255"/>
-					<label for="foreground_2">White</label>
-				</fieldset>
+				<select name="foreground" id="foreground">
+					<option value="192" style="background-color:#FFFFFF">Black</option>
+					<option value="255" style="background-color:#000000">White</option>
+				</select>
 			</div>
 			<div data-role="fieldcontain">
 				<label for="align">Alignment:</label>
