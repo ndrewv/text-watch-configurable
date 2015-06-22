@@ -8,6 +8,8 @@ https://github.com/tkrotoff/jquery-simplecolorpicker
 
 Create a HTML select: 
 
+```HTML
+
 <select name="colorpicker">
   <option value="0" data-color="#7bd148">Green</option>
   <option value="1" data-color="#5484ed">Bold blue</option>
