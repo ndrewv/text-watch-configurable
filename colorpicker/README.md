@@ -1,36 +1,28 @@
 A modified Version of tkrotoff's simple color picker found here:
 https://github.com/tkrotoff/jquery-simplecolorpicker
 
-# Very simple jQuery color picker
-
-Yet another jQuery color picker. This plugin is unobtrusive and integrates well with Twitter Bootstrap (it works just fine without).
-The source code only requires jQuery and is about 200 lines of JavaScript and 100 lines of CSS.
-
-See the [online demo](http://plnkr.co/edit/VVclW0?p=preview).
-
-![simplecolorpicker-inline.png](http://img11.hostingpics.net/pics/75504320131025121603ColorpickerforjQuery.png)
-
-![simplecolorpicker-picker.png](http://img11.hostingpics.net/pics/71709820131025122115ColorpickerforjQuery.png)
+- Modified to preserve value information of the original select. Uses data-color field to set color information instead.
+- Also slightly larger css styling for mobile use.
 
 ## How to use
 
-Create a HTML select:
+Create a HTML select: 
 
-```HTML
 <select name="colorpicker">
-  <option value="#7bd148">Green</option>
-  <option value="#5484ed">Bold blue</option>
-  <option value="#a4bdfc">Blue</option>
-  <option value="#46d6db">Turquoise</option>
-  <option value="#7ae7bf">Light green</option>
-  <option value="#51b749">Bold green</option>
-  <option value="#fbd75b">Yellow</option>
-  <option value="#ffb878">Orange</option>
-  <option value="#ff887c">Red</option>
-  <option value="#dc2127">Bold red</option>
-  <option value="#dbadff">Purple</option>
-  <option value="#e1e1e1">Gray</option>
+  <option value="0" data-color="#7bd148">Green</option>
+  <option value="1" data-color="#5484ed">Bold blue</option>
+  <option value="2" data-color="#a4bdfc">Blue</option>
+  <option value="3" data-color="#46d6db">Turquoise</option>
+  <option value="4" data-color="#7ae7bf">Light green</option>
+  <option value="5" data-color="#51b749">Bold green</option>
+  <option value="6" data-color="#fbd75b">Yellow</option>
+  <option value="7" data-color="#ffb878">Orange</option>
+  <option value="8" data-color="#ff887c">Red</option>
+  <option value="9" data-color="#dc2127">Bold red</option>
+  <option value="10" data-color="#dbadff">Purple</option>
+  <option value="11" data-color="#e1e1e1">Gray</option>
 </select>
+
 ```
 
 add the plugin files:
