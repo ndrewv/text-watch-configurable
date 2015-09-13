@@ -1,12 +1,12 @@
 {
     "appKeys": {
         "align": 1,
-        "animation": 6,
-        "background": 0,
-        "capital": 2,
-        "datestyle": 4,
-        "fontstyle": 3,
-        "vertoffset": 5
+        "anim": 6,
+        "bg": 0,
+        "cap": 2,
+        "date": 4,
+        "font": 3,
+        "vert": 5
     },
     "capabilities": [
         "configurable"
@@ -156,11 +156,13 @@
             }
         ]
     },
-    "sdkVersion": "2",
+    "sdkVersion": "3",
     "shortName": "Texttime",
+    "targetPlatforms": [
+        "aplite"
+    ],
     "uuid": "9c0f8228-066d-4691-b468-23d93287f5b4",
-    "versionCode": 1,
-    "versionLabel": "1.4",
+    "versionLabel": "1.3",
     "watchapp": {
         "watchface": true
     }

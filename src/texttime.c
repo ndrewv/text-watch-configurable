@@ -3,11 +3,13 @@
   
 //#define DEBUG 1
   
-#define version_major 1 
-#define version_minor 4
+#define version_major 1
+#define version_minor 3
 
 #define NUM_LAYERS 4
 #define TIME_SLOT_ANIMATION_DURATION 700
+#define COLOR_START 192
+#define NUM_COLORS 64
 
   //flash storage key
 #define FLASH_OPTIONS 0
@@ -23,7 +25,17 @@
 
 #define DEFAULT_FONT_UPPER FONT_KEY_BITHAM_42_BOLD
 #define DEFAULT_FONT_LOWER FONT_KEY_BITHAM_42_LIGHT
-
+  
+#ifdef PBL_COLOR
+    #define DEFAULT_BACKGROUND GColorBlackARGB8
+    #define DEFAULT_FOREGROUND GColorWhiteARGB8
+  #else
+    #define GColorBlackARGB8 192
+    #define GColorWhiteARGB8 255
+    #define DEFAULT_BACKGROUND GColorBlackARGB8
+    #define DEFAULT_FOREGROUND GColorWhiteARGB8
+  #endif
+  
 //define options for fonts
 #define KEY_FONT_DEFAULT 0
 //total number of system font selections
@@ -47,8 +59,9 @@
 #define KEY_CUSTOM_FONT_SIZE 14
 
 //layer reference array
-  static const uint32_t s_offset_base[NUM_LAYERS] = {0, 38, 76, 114};
-  static const char *s_font_base[NUM_LAYERS] = {DEFAULT_FONT_UPPER, DEFAULT_FONT_LOWER, DEFAULT_FONT_LOWER, DEFAULT_FONT_LOWER};
+static const uint32_t s_offset_base[NUM_LAYERS] = {0, 38, 76, 114};
+static const char *s_font_base[NUM_LAYERS] = {DEFAULT_FONT_UPPER, DEFAULT_FONT_LOWER, DEFAULT_FONT_LOWER, DEFAULT_FONT_LOWER};
+
 //font reference array
 static const uint32_t s_custom_fonts_upper[KEY_CUSTOM_FONT_SIZE] = {RESOURCE_ID_FONT_DANIEL_BOLD_32, RESOURCE_ID_FONT_FINELINER_38, RESOURCE_ID_FONT_PHILO_BOLD_38, RESOURCE_ID_FONT_RETRO_44, RESOURCE_ID_FONT_STAR_BOLD_26, RESOURCE_ID_FONT_STENCILIA_34, RESOURCE_ID_FONT_TECH_BOLD_22, RESOURCE_ID_FONT_VISITOR_30, RESOURCE_ID_FONT_FLO_BOLD_34, RESOURCE_ID_FONT_QUICK_BOLD_36, RESOURCE_ID_FONT_COLLEGE_BOLD_38, RESOURCE_ID_FONT_LCD_34, RESOURCE_ID_FONT_ARCHISTICO_34, RESOURCE_ID_FONT_EURO_BOLD_44};
 static const uint32_t s_custom_fonts_lower[KEY_CUSTOM_FONT_SIZE] = {RESOURCE_ID_FONT_DANIEL_32, RESOURCE_ID_FONT_FINELINER_38, RESOURCE_ID_FONT_PHILO_38, RESOURCE_ID_FONT_RETRO_44, RESOURCE_ID_FONT_STAR_26, RESOURCE_ID_FONT_STENCILIA_34, RESOURCE_ID_FONT_TECH_22, RESOURCE_ID_FONT_VISITOR_30, RESOURCE_ID_FONT_FLO_34, RESOURCE_ID_FONT_QUICK_36, RESOURCE_ID_FONT_COLLEGE_38, RESOURCE_ID_FONT_LCD_34, RESOURCE_ID_FONT_ARCHISTICO_34, RESOURCE_ID_FONT_EURO_44};
@@ -80,7 +93,6 @@ typedef struct CommonWordsData {
 //member variables
 static Window *s_main_window;
 static CommonWordsData *s_layers[4];
-static InverterLayer *s_inverter_layer;
 static struct tm *s_new_time;
 static GFont *s_custom_font_upper;
 static GFont *s_custom_font_lower;
@@ -89,13 +101,6 @@ static int s_options [KEY_LIMIT];
 /*  Apply the application settings from the options array */
 void update_configuration(void)
 {
-  //update background colour
-  if(s_options[KEY_BACKGROUND] == 0){
-    layer_set_hidden(inverter_layer_get_layer(s_inverter_layer), true);
-  }else{
-    layer_set_hidden(inverter_layer_get_layer(s_inverter_layer), false);
-  }
-  
   //update font style
   if(s_options[KEY_FONT_STYLE] > 0){
     fonts_unload_custom_font(*s_custom_font_upper);
@@ -127,15 +132,37 @@ void update_configuration(void)
     break;
   }
   
+  #ifdef PBL_COLOR
+    GColor background = (GColor){.argb = s_options[KEY_BACKGROUND]};
+    if(s_options[KEY_BACKGROUND] != GColorBlackARGB8){
+      foreground =(GColor){.argb = DEFAULT_BACKGROUND}
+    }else{
+      foreground =(GColor){.argb = DEFAULT_BACKGROUND}
+    }
+  #else
+    GColor background = GColorBlack;
+    GColor foreground = GColorWhite;
+    if(s_options[KEY_BACKGROUND] != GColorBlackARGB8){
+      background = GColorWhite;
+      foreground = GColorBlack;
+    }
+  #endif
+    window_set_background_color(s_main_window,background);
+  
   //apply update
   for(int j = 0; j < NUM_LAYERS; j++){
     TextLayer* layer = (TextLayer*)text_layer_get_layer(s_layers[j]->label);
     text_layer_set_text_alignment(layer, align);
     layer_set_frame((Layer*)layer, GRect(0, ((j*38) + s_options[KEY_VERT_OFFSET]), layer_get_bounds(window_get_root_layer(s_main_window)).size.w, 42));
+    text_layer_set_text_color(layer, foreground);
     //update animations
-    GRect frame = layer_get_frame(window_get_root_layer(s_main_window));  
+    GRect frame = layer_get_frame(window_get_root_layer(s_main_window));
+    
+    #ifdef PBL_PLATFORM_APLITE
     property_animation_destroy(s_layers[j]->prop_animation_out); 
-    property_animation_destroy(s_layers[j]->prop_animation_in); 
+    property_animation_destroy(s_layers[j]->prop_animation_in);
+    #endif
+      
     GRect from_frame = layer_get_frame(text_layer_get_layer(s_layers[j]->label));
     GRect to_frame = GRect(-frame.size.w, from_frame.origin.y, frame.size.w, from_frame.size.h);
     //create animations
@@ -152,10 +179,10 @@ void update_configuration(void)
 
 /* Text Layer initialisation */
 void init_layer(Layer *window_layer, CommonWordsData *layer, GRect rect,
-		GFont font) {
+		GFont font, GColor foreground) {
 	layer->label = text_layer_create(rect);
 	text_layer_set_background_color(layer->label, GColorClear);
-	text_layer_set_text_color(layer->label, GColorWhite);
+	text_layer_set_text_color(layer->label, foreground);
 	text_layer_set_font(layer->label, font);
   layer_set_clips((Layer*)layer->label, false);
 	layer_add_child(window_layer, text_layer_get_layer(layer->label));
@@ -178,8 +205,15 @@ void slide_in(CommonWordsData *layer) {
 void handle_slide_out_animation_stopped(Animation *slide_out_animation, bool finished,
 		void *context) {
 	CommonWordsData *layer = (CommonWordsData *) context;
+  #ifdef DEBUG
+			APP_LOG(APP_LOG_LEVEL_DEBUG, "slide out animation completed, updating layer");
+  #endif
+
     //schedule slide in animation
     if(finished){
+  #ifdef DEBUG
+			APP_LOG(APP_LOG_LEVEL_DEBUG, "updating layer");
+  #endif  
   		layer->update(s_new_time, layer->buffer);
       slide_in(layer);
   	}
@@ -187,7 +221,13 @@ void handle_slide_out_animation_stopped(Animation *slide_out_animation, bool fin
 
 /* minute tick handler */
 static void handle_minute_tick(struct tm *t, TimeUnits units_changed) {
-	memcpy(t,s_new_time, sizeof(struct tm));
+  time_t now = time(NULL);
+  s_new_time = localtime(&now);
+  
+  #ifdef DEBUG
+			APP_LOG(APP_LOG_LEVEL_DEBUG, "time is %u",s_new_time->tm_min);
+  #endif  
+  
 	if ((units_changed & MINUTE_UNIT) == MINUTE_UNIT) {
 		if ((17 > t->tm_min || t->tm_min > 19)
 				&& (11 > t->tm_min || t->tm_min > 13)) {
@@ -222,10 +262,11 @@ static void handle_minute_tick(struct tm *t, TimeUnits units_changed) {
 /* App message input handler */
 void handle_inbox_received(DictionaryIterator *iterator, void *context)
 {
-  //unsubscribe to prevent update collision
+  //unsubscribe and cancel animations to prevent update collision
   tick_timer_service_unsubscribe();
   animation_unschedule_all();
   
+  //iterate through int encoded message options
   Tuple *t = dict_read_first(iterator); 
   while(t != NULL) {
     if(t->key < KEY_LIMIT){
@@ -241,10 +282,10 @@ void handle_inbox_received(DictionaryIterator *iterator, void *context)
   fuzzy_set_date_style(s_options[KEY_DATE_STYLE]);
   update_configuration();
   
-  //refresh the layers
+  //refresh layers
 	time_t now = time(NULL);
 	s_new_time = localtime(&now);
-#ifdef DEBUG      
+#ifdef DEBUG   
       s_new_time->tm_hour = 12;
       s_new_time->tm_min = 5;
       s_new_time->tm_sec = 0;
@@ -292,6 +333,8 @@ static void handle_main_window_load(Window *window) {
 #endif
   }else{
     s_options[KEY_ANIMATION] = TIME_SLOT_ANIMATION_DURATION;
+    s_options[KEY_BACKGROUND] = DEFAULT_BACKGROUND;
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Background is - %d ;", s_options[KEY_BACKGROUND]);
   }
   fuzzy_set_date_lower(s_options[KEY_CAPITAL]);
   fuzzy_set_date_style(s_options[KEY_DATE_STYLE]);
@@ -312,10 +355,27 @@ static void handle_main_window_load(Window *window) {
 
 	// initialise layers
 	GRect frame = layer_get_frame(window_get_root_layer(s_main_window));
+  
+  //set color information
+  #ifdef PBL_COLOR
+    GColor background = (GColor){.argb = s_options[KEY_BACKGROUND]};
+  #else
+    GColor background = GColorBlack;
+    GColor foreground = GColorWhite;
+    if(s_options[KEY_BACKGROUND] != GColorBlackARGB8){
+      #ifdef DEBUG
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "background is not GColorBlackARGB8");
+      #endif
+      background = GColorWhite;
+      foreground = GColorBlack;
+    }
+  #endif
+  window_set_background_color(s_main_window,background);
+  
   //hours
   for (int i = 0; i < NUM_LAYERS; ++i) {
     init_layer(window_layer, s_layers[i], GRect(0, s_offset_base[i] + s_options[KEY_VERT_OFFSET], bounds.size.w, 42),
-		fonts_get_system_font(s_font_base[i]));
+		fonts_get_system_font(s_font_base[i]), foreground);
     //calculate offsets
     GRect from_frame = layer_get_frame(text_layer_get_layer(s_layers[i]->label));
     GRect to_frame = GRect(-frame.size.w, from_frame.origin.y, frame.size.w, from_frame.size.h);
@@ -329,8 +389,6 @@ static void handle_main_window_load(Window *window) {
     animation_set_duration((Animation*) s_layers[i]->prop_animation_in, s_options[KEY_ANIMATION]);
 	  animation_set_curve((Animation*) s_layers[i]->prop_animation_in, AnimationCurveEaseOut);
   }
-	s_inverter_layer = inverter_layer_create(GRect(0, 0, 144, 168));
-	layer_add_child(window_layer, inverter_layer_get_layer(s_inverter_layer));
 	update_configuration();
 
 	//show the layers
@@ -354,15 +412,16 @@ static void handle_main_window_unload(Window *window) {
     s_custom_font_lower = 0;
   } 
 	for (int i = 0; i < NUM_LAYERS; ++i) {
+    #ifdef PBL_PLATFORM_APLITE
     property_animation_destroy(s_layers[i]->prop_animation_out); 
     property_animation_destroy(s_layers[i]->prop_animation_in); 
+    #endif
 		text_layer_destroy(s_layers[i]->label);
 		free(s_layers[i]);
 		s_layers[i] = NULL;
 	}
   free(s_custom_font_upper);
   free(s_custom_font_lower);
-	inverter_layer_destroy(s_inverter_layer);
 }
 
 /* app init */
